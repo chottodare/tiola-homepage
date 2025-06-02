@@ -1,0 +1,1595 @@
+import React, { useState, useEffect } from 'react';
+
+// Helper function to get favicon URL
+const getFaviconUrl = (url) => {
+    try {
+        // Only attempt to create a URL object if the URL is not just a hash or empty
+        if (url && url !== '#') {
+            const domain = new URL(url).hostname;
+            // Using Google's S2 Favicons service for more reliable favicon fetching
+            return `https://www.google.com/s2/favicons?domain=${domain}&sz=64`; // sz=64 for better resolution
+        }
+        return null; // Return null for invalid or placeholder URLs
+    } catch (error) {
+        console.error("Invalid URL for favicon:", url, error);
+        return null; // Return null if URL is invalid
+    }
+};
+
+// Dane zakładek (na podstawie poprzednio sparsowanego pliku HTML)
+// Ikony będą generowane dynamicznie na podstawie URL
+const allBookmarksData = [
+    {
+        folder: "Edukacja",
+        title: "Ocena Efektywności Pomocy Psychologiczno-Pedagogicznej",
+        url: "https://pedagogika-specjalna.edu.pl/warsztat-pracy/ocena-efektywnosci-udzielanej-pomocy-psychologiczno-pedagogicznej/",
+        description: "Artykuł dotyczący oceny efektywności pomocy psychologiczno-pedagogicznej.",
+    },
+    {
+        folder: "Edukacja",
+        title: "Podstawa Programowa Kształcenia Ogólnego (Szkoły Podstawowe)",
+        url: "https://www.gov.pl/web/edukacja/podstawa-programowa-ksztalcenia-ogolnego-dla-szkol-podstawowych",
+        description: "Oficjalna strona z podstawą programową kształcenia ogólnego dla szkół podstawowych.",
+    },
+    {
+        folder: "Rozrywka",
+        title: "YouTube - Platforma Wideo",
+        url: "https://www.youtube.com/", // Changed to a more standard YouTube URL
+        description: "Platforma wideo YouTube.",
+    },
+    {
+        folder: "Hobby",
+        title: "Blog Tinas Blumenwiese (Rękodzieło)",
+        url: "https://tinasblumenwiese.com/",
+        description: "Blog o rękodziele i kreatywności.",
+    },
+    {
+        folder: "Poczta",
+        title: "Onet Poczta - Skrzynka Odbiorcza",
+        url: "https://poczta.onet.pl/", // Simplified URL
+        description: "Poczta elektroniczna Onet.",
+    },
+    {
+        folder: "Zakupy",
+        title: "Allegro - Platforma Zakupowa",
+        url: "https://allegro.pl/",
+        description: "Popularna platforma zakupowa.",
+    },
+    {
+        folder: "Poczta",
+        title: "WP Poczta - Logowanie",
+        url: "https://poczta.wp.pl/", // Simplified URL
+        description: "Poczta elektroniczna WP.",
+    },
+    {
+        folder: "Zdrowie",
+        title: "Contour Diabetes - Zarządzanie Cukrzycą",
+        url: "https://www.contourplusone.pl/",
+        description: "Strona produktu do zarządzania cukrzycą.",
+    },
+    {
+        folder: "Hobby",
+        title: "Pinterest - Odkrywaj Pomysły",
+        url: "https://pl.pinterest.com/",
+        description: "Platforma do odkrywania i zapisywania pomysłów.",
+    },
+    {
+        folder: "Finanse",
+        title: "Bank Santander - Logowanie Online",
+        url: "https://www.centrum24.pl/", // Simplified URL
+        description: "Logowanie do bankowości internetowej Santander.",
+    },
+    {
+        folder: "Zakupy",
+        title: "PAYBACK Bonprix - Sklep Online",
+        url: "https://www.payback.pl/sklepy-online/bonprix", // Simplified URL
+        description: "Strona Payback dla zakupów w Bonprix.",
+    },
+    {
+        folder: "Zakupy",
+        title: "PAYBACK Sklepy Online - Lista",
+        url: "https://www.payback.pl/sklepy-online",
+        description: "Lista sklepów online współpracujących z Payback.",
+    },
+    {
+        folder: "Administracja",
+        title: "ZUS - Raporty Informacyjne",
+        url: "https://www.zus.pl/portal/obszar-ubezpieczonego.npi#KUB0025",
+        description: "Raporty informacyjne z ZUS.",
+    },
+    {
+        folder: "Rozrywka",
+        title: "Audioteka - Moja Półka z Audiobookami",
+        url: "https://audioteka.com/pl/my-shelf",
+        description: "Moja półka z audiobookami na Audioteka.com.",
+    },
+    {
+        folder: "Rozrywka",
+        title: "Audioteka - Subskrypcja",
+        url: "https://promo.audioteka.com/pl/subscribe/code#login",
+        description: "Strona subskrypcji Audioteka.",
+    },
+    {
+        folder: "Administracja",
+        title: "ZUS - Logowanie i Rejestracja",
+        url: "https://www.zus.pl/portal/logowanie.npi",
+        description: "Strona logowania i rejestracji do portalu ZUS.",
+    },
+    {
+        folder: "Administracja",
+        title: "Twój e-PIT (Podatki.gov.pl)",
+        url: "https://www.podatki.gov.pl/pit/twoj-e-pit/",
+        description: "Serwis Twój e-PIT na gov.pl.",
+    },
+    {
+        folder: "Zdrowie",
+        title: "NFZ - Przegląd Skierowań",
+        url: "https://skierowania.nfz.gov.pl/ap-przegl-skier/servlet/skierowania/show_app",
+        description: "Przeglądarka skierowań na leczenie uzdrowiskowe NFZ.",
+    },
+    {
+        folder: "Poczta",
+        title: "Gmail - Skrzynka Odbiorcza",
+        url: "https://mail.google.com/",
+        description: "Skrzynka odbiorcza Gmail.",
+    },
+    {
+        folder: "Filmy i TV",
+        title: "FilmPolski.pl - Filmoteka",
+        url: "http://filmpolski.pl/",
+        description: "Filmoteka polska.",
+    },
+    {
+        folder: "Filmy i TV",
+        title: "Filmy Online CDA - Darmowe HD",
+        url: "https://cda-filmy.online/",
+        description: "Filmy online w HD za darmo.",
+    },
+    {
+        folder: "Filmy i TV",
+        title: "Horizon TV - Oglądaj TV Online",
+        url: "https://www.horizon.tv/pl_pl/tv/ogladaj-tv.html",
+        description: "Oglądaj TV online na Horizon.",
+    },
+    {
+        folder: "Filmy i TV",
+        title: "VOD.pl - Filmy i Seriale Online",
+        url: "https://vod.pl/",
+        description: "Filmy i seriale online VOD.",
+    },
+    {
+        folder: "Filmy i TV",
+        title: "CDA - Społeczność Filmowa",
+        url: "https://www.cda.pl/",
+        description: "Społeczność cda.pl.",
+    },
+    {
+        folder: "Filmy i TV",
+        title: "PLAY NOW - Serwis Streamingowy",
+        url: "https://playnow.pl/",
+        description: "Serwis streamingowy PLAY NOW.",
+    },
+    {
+        folder: "Filmy i TV",
+        title: "Film w Szkole - Filmy Edukacyjne",
+        url: "https://filmwszkole.pl/filmy/",
+        description: "Filmy edukacyjne dla szkół.",
+    },
+    {
+        folder: "Filmy i TV",
+        title: "Rakuten TV - Najpopularniejsze Publikacje",
+        url: "https://rakuten.tv/pl/",
+        description: "Najpopularniejsze publikacje na Rakuten TV.",
+    },
+    {
+        folder: "Filmy i TV",
+        title: "TVP Repetytorium Maturzysty (Gov.pl)",
+        url: "https://www.gov.pl/web/edukacja/tvp-repetytorium-maturzysty",
+        description: "Repetytorium maturalne TVP na gov.pl.",
+    },
+    {
+        folder: "Dzienniki Szkolne",
+        title: "ZSE Wołomin - Strona Szkoły",
+        url: "https://zsewolomin.edupage.org/",
+        description: "Strona Zespołu Szkół Ekonomicznych w Wołominie.",
+    },
+    {
+        folder: "Dzienniki Szkolne",
+        title: "Dziennik UONET+ (Powiat Wołomiński)",
+        url: "https://uonetplus.vulcan.net.pl/powiatwolominski/",
+        description: "Dziennik elektroniczny UONET+.",
+    },
+    { // Poprawiony brakujący obiekt w danych
+        folder: "Dzienniki Szkolne",
+        title: "Brakujący wpis (Placeholder)",
+        url: "https://example.com/placeholder",
+        description: "Ten wpis był wcześniej niekompletny i został uzupełniony.",
+    },
+    {
+        folder: "Dzienniki Szkolne",
+        title: "LIBRUS Szkoła - Portal Edukacyjny",
+        url: "https://portal.librus.pl/szkola",
+        description: "Portal LIBRUS Szkoła.",
+    },
+    {
+        folder: "Dzienniki Szkolne",
+        title: "Ekonomik Wołomin - Facebook",
+        url: "https://www.facebook.com/EkonomikWolomin/",
+        description: "Strona Facebook ZSE w Wołominie.",
+    },
+    {
+        folder: "Narzędzia Online",
+        title: "Microsoft Office Online - Strona Główna",
+        url: "https://www.office.com/apps",
+        description: "Strona główna Microsoft Office.",
+    },
+    {
+        folder: "Edukacja",
+        title: "Nowa Era - Zaświadczenia ze Spotkań",
+        url: "https://www.nowaera.pl/spotkania/zaswiadczenia",
+        description: "Zaświadczenia o udziale w spotkaniach Nowa Era.",
+    },
+    {
+        folder: "Administracja",
+        title: "COVID-19 - Aktualne Zasady i Ograniczenia",
+        url: "https://www.gov.pl/web/koronawirus/aktualne-zasady-i-ograniczenia",
+        description: "Aktualne zasady i ograniczenia związane z koronawirusem.",
+    },
+    {
+        folder: "Edukacja",
+        title: "CEO.org.pl - Szkolenia i Projekty Edukacyjne",
+        url: "https://ceo.org.pl/",
+        description: "Szkolenia dla nauczycieli i projekty edukacyjne.",
+    },
+    {
+        folder: "Edukacja",
+        title: "LearningApps.org - Interaktywne Moduły",
+        url: "https://learningapps.org/",
+        description: "Interaktywne moduły edukacyjne.",
+    },
+    {
+        folder: "Edukacja",
+        title: "Epodręczniki.pl - Platforma z Podręcznikami",
+        url: "https://epodreczniki.pl/",
+        description: "Platforma z epodręcznikami.",
+    },
+    {
+        folder: "Dzienniki Szkolne",
+        title: "SP4 Wołomin - Strona Szkoły Podstawowej",
+        url: "http://zs4-wolomin.pl/",
+        description: "Strona Szkoły Podstawowej nr 4 w Wołominie.",
+    },
+    {
+        folder: "Narzędzia Online",
+        title: "Tłumacz Google - Wyszukiwarka",
+        url: "https://translate.google.com/",
+        description: "Wyszukiwarka Google dla tłumacza.",
+    },
+    {
+        folder: "Język Hiszpański",
+        title: "Hiszpański - Lekcja 1 (Ang.pl)",
+        url: "https://hiszpanski.ang.pl/nauka/lekcje_od_podstaw/czesc",
+        description: "Pierwsza lekcja hiszpańskiego online.",
+    },
+    {
+        folder: "Język Hiszpański",
+        title: "Hiszpański - Ćwiczenia (Ang.pl)",
+        url: "https://hiszpanski.ang.pl/cwiczenia",
+        description: "Ćwiczenia z hiszpańskiego online.",
+    },
+    {
+        folder: "Język Hiszpański",
+        title: "Hiszpański - Czasowniki IR (Ang.pl)",
+        url: "https://hiszpanski.ang.pl/gramatyka/czasownik/iii_grupa_koniugacji_ir",
+        description: "Odmiana czasowników hiszpańskich - III grupa koniugacji.",
+    },
+    {
+        folder: "Język Hiszpański",
+        title: "Hiszpański - Czasowniki Regularne (Ang.pl)",
+        url: "https://hiszpanski.ang.pl/gramatyka/czasownik/wstep",
+        description: "Wprowadzenie do hiszpańskich czasowników regularnych.",
+    },
+    {
+        folder: "Język Hiszpański",
+        title: "Hiszpański - Gramatyka (Ang.pl)",
+        url: "https://hiszpanski.ang.pl/gramatyka/spis-tresci",
+        description: "Spis zagadnień gramatyki hiszpańskiej.",
+    },
+    {
+        folder: "Język Hiszpański",
+        title: "Słówka Hiszpański: Szkoła (e-hiszpanski.com)",
+        url: "http://e-hiszpanski.com/slownictwo/szkola.html",
+        description: "Słówka z języka hiszpańskiego dotyczące szkoły.",
+    },
+    {
+        folder: "Język Hiszpański",
+        title: "¡Español, por favor! (e-book do nauki)",
+        url: "https://www.espanoleandocondoni.com/sklep/item/e-book/espanol-por-favor---version-electronica-e-book/",
+        description: "E-book do nauki hiszpańskiego.",
+    },
+    {
+        folder: "Język Hiszpański",
+        title: "Hiszpańska Salsa - Zdrowie (Blog)",
+        url: "http://hiszpanskasalsa.blogspot.com/2016/08/la-salud-zdrowie-czii.html",
+        description: "Blog o zdrowiu po hiszpańsku.",
+    },
+    {
+        folder: "Język Hiszpański",
+        title: "Hiszpański - Przysłówki (Crib.pl)",
+        url: "https://hiszpanski.crib.pl/adverbio-przyslowki-w-jezyku-hiszpanskim.html",
+        description: "Przysłówki w języku hiszpańskim.",
+    },
+    {
+        folder: "Język Hiszpański",
+        title: "Hiszpański - Liczebniki (Langusta.io)",
+        url: "https://langusta.io/blog/liczebniki-hiszpanskie-maraton-jezykowy-dla-kazdego/",
+        description: "Maraton językowy z liczebnikami hiszpańskimi.",
+    },
+    {
+        folder: "Język Hiszpański",
+        title: "YouTube - Hiszpańska Wymowa G",
+        url: "https://www.youtube.com/watch?v=example1", // Example URL
+        description: "Jak poprawnie wymawiać: guacamole, guitarra, gmail? | hiszpańska wymowa G.",
+    },
+    {
+        folder: "Język Hiszpański",
+        title: "YouTube - Agata Uczy (Kanał Edukacyjny)",
+        url: "https://www.youtube.com/watch?v=example2", // Example URL
+        description: "Kanał edukacyjny Agata uczy.",
+    },
+    {
+        folder: "Język Hiszpański",
+        title: "YouTube - Planowanie Nauki Hiszpańskiego",
+        url: "https://www.youtube.com/watch?v=example3", // Example URL
+        description: "Jak zaplanować naukę hiszpańskiego? | rozmowa z Klaudią z Optimismo Compartido.",
+    },
+    {
+        folder: "Język Hiszpański",
+        title: "YouTube - Filmy o Hiszpańskiej Wymowie",
+        url: "https://www.youtube.com/watch?v=example4", // Example URL
+        description: "Filmy o hiszpańskiej wymowie.",
+    },
+    {
+        folder: "Język Hiszpański",
+        title: "YouTube - Kurs Hiszpańskiego dla Początkujących",
+        url: "https://www.youtube.com/watch?v=example5", // Example URL
+        description: "Kurs hiszpańskiego dla początkujących.",
+    },
+    {
+        folder: "Język Hiszpański",
+        title: "Hiszpański - Która Godzina (Speaklanguages.com)",
+        url: "https://pl.speaklanguages.com/hiszpa%C5%84ski/zwroty/kt%C3%B3ra-godzina",
+        description: "Określanie czasu po hiszpańsku.",
+    },
+    {
+        folder: "Język Hiszpański",
+        title: "Hiszpański - Podawanie Godziny (Curso.pl)",
+        url: "http://www.curso.pl/index.php?p=2_137",
+        description: "Podawanie godziny w języku hiszpańskim.",
+    },
+    {
+        folder: "Język Hiszpański",
+        title: "Hiszpański - Godziny Słówka (Crib.pl)",
+        url: "https://hiszpanski.crib.pl/godziny-nauka-slowek-zwrotow.html",
+        description: "Nauka słówek i zwrotów dotyczących godzin.",
+    },
+    {
+        folder: "Język Hiszpański",
+        title: "Agata Uczy - Skarby (Materiały do nauki)",
+        url: "https://www.agatauczy.pl/skarby/",
+        description: "Materiały do nauki hiszpańskiego od Agaty uczy.",
+    },
+    {
+        folder: "Język Hiszpański",
+        title: "Small Things with Great Heart (Dla Nauczycieli Języków)",
+        url: "https://smallthingswithgreatheart.com/",
+        description: "Materiały dla nauczycieli języków obcych.",
+    },
+    {
+        folder: "Geografia",
+        title: "Geography Notes (PDF)",
+        url: "https://kingproehl.files.wordpress.com/2014/08/geography_notes2.pdf",
+        description: "Plik PDF z notatkami z geografii.",
+    },
+    {
+        folder: "Geografia",
+        title: "60 Wirtualnych Budowli do Zwiedzania",
+        url: "https://www.budowle.pl/tekst/60-budowli-ktore-mozesz-odwiedzic-wirtualnie-bez-wychodzenia-z-domu/546",
+        description: "Lista 60 budowli do wirtualnego zwiedzania.",
+    },
+    {
+        folder: "Geografia",
+        title: "Wirtualny Kraj - Spacery Panoramiczne",
+        url: "https://www.wirtualnykraj.pl/",
+        description: "Wirtualne spacery i wycieczki panoramiczne.",
+    },
+    {
+        folder: "Język Polski",
+        title: "Tragizm Antygony (Wypracowanie)",
+        url: "https://www.bryk.pl/wypracowania/jezyk-polski/antyk-i-biblia/14037-na-czym-polega-tragizm-antygony.html",
+        description: "Wypracowanie na temat tragizmu Antygony.",
+    },
+    {
+        folder: "Język Polski",
+        title: "Makbet - Bohaterowie (KLP.pl)",
+        url: "https://klp.pl/makbet/a-7598-3.html",
+        description: "Charakterystyka bohaterów Makbeta z KLP.pl.",
+    },
+    {
+        folder: "Język Polski",
+        title: "Makbet - Analiza Lektury (Wypracowania.pl)",
+        url: "https://wypracowania.pl/lektury/makbet-geneza-czas-i-miejsce-akcji-bohaterowie-interpretacja-i-motywy",
+        description: "Analiza lektury Makbet.",
+    },
+    {
+        folder: "Język Polski",
+        title: "Skład Zupy Czarownic w Makbecie (Analiza)",
+        url: "https://fizjologus.wordpress.com/2012/05/31/sklad-zupy-czarownic-w-makbecie/",
+        description: "Analiza składu zupy czarownic w Makbecie.",
+    },
+    {
+        folder: "Język Polski",
+        title: "Makbet - Streszczenie i Analiza (KLP.pl)",
+        url: "https://klp.pl/makbet/a-7598.html",
+        description: "Streszczenie i analiza Makbeta z KLP.pl.",
+    },
+    {
+        folder: "Język Polski",
+        title: "Antygona - Pytania i Odpowiedzi (AleKlasa)",
+        url: "https://aleklasa.pl/gimnazjum/c267-lektury-do-egzaminu/antygona-sofoklesa",
+        description: "Pytania i odpowiedzi dotyczące Antygony.",
+    },
+    {
+        folder: "Geografia",
+        title: "Czynniki Klimatotwórcze (Geografia24.pl)",
+        url: "http://geografia24.pl/czynniki-klimatotworcze/",
+        description: "Artykuł o czynnikach klimatotwórczych.",
+    },
+    {
+        folder: "Geografia",
+        title: "Prognozowanie Pogody (Geografia24.pl)",
+        url: "http://geografia24.pl/prognozowanie-pogody/",
+        description: "Artykuł o prognozowaniu pogody.",
+    },
+    {
+        folder: "Filozofia",
+        title: "Filozofie Starożytne (Sciaga.pl)",
+        url: "https://sciaga.pl/tekst/57655-58-filozofie_starozytne",
+        description: "Tekst o filozofiach starożytnych.",
+    },
+    {
+        folder: "Język Polski",
+        title: "Co to są Neologizmy? (AleKlasa)",
+        url: "https://aleklasa.pl/gimnazjum/c185-slowotworstwo/co-to-sa-neologizmy",
+        description: "Definicja i przykłady neologizmów.",
+    },
+    {
+        folder: "Język Polski",
+        title: "Neologizmy - Definicja i Przykłady (Bryk.pl)",
+        url: "https://www.bryk.pl/wypracowania/jezyk-polski/materialy-do-matury/1010410-neologizmy-definicja-i-przykady.html",
+        description: "Definicja i przykłady neologizmów z Bryk.pl.",
+    },
+    {
+        folder: "Język Polski",
+        title: "Neologizm - Prosty Polski (Definicja i Przykłady)",
+        url: "https://prostypolski.pl/neologizm-definicja-przyklady-neologizmow/",
+        description: "Definicja i przykłady neologizmów z Prosty Polski.",
+    },
+    {
+        folder: "Podróże",
+        title: "Tatrzańska Świątynia Lodowa na Hrebienku",
+        url: "https://gorydlaciebie.pl/tatrzanska-swiatynia-lodowa-na-hrebienku/",
+        description: "Atrakcja słowackich Tatr.",
+    },
+    {
+        folder: "Język Polski",
+        title: "Laura i Filon (Audiobook na YouTube)",
+        url: "https://www.youtube.com/watch?v=example6", // Example URL
+        description: "Audiobook 'Laura i Filon' Franciszka Karpińskiego.",
+    },
+    {
+        folder: "Rozwój Osobisty",
+        title: "Umiejętności Społeczne - Program Zajęć Rewalidacyjnych",
+        url: "https://autyzm.life/2020/01/17/umiejetnosci-spoleczne-program-zajec-rewalidacyjnych/",
+        description: "Program zajęć rewalidacyjnych dotyczących umiejętności społecznych.",
+    },
+    {
+        folder: "Historia",
+        title: "Niccolo Paganini (PDF)",
+        url: "https://www.sm1st.wroclaw.pl/wp-content/uploads/2020/05/1.Niccolo-Paganini-180-rocznica-s%CC%81mierci.pdf",
+        description: "Plik PDF o Niccolo Paganinim.",
+    },
+    {
+        folder: "Rozrywka",
+        title: "Kultowe Pary Filmowe (Ofeminin.pl)",
+        url: "https://www.ofeminin.pl/milosc/zwiazek/12-kultowych-par-z-najwiekszych-kinowych-romansow/hyyxvms",
+        description: "12 kultowych par z największych kinowych romansów.",
+    }
+];
+
+// Dane dla sekcji szybkiego dostępu
+const quickAccessLinks = [
+    { title: "Onet Poczta", url: "https://poczta.onet.pl/" },
+    { title: "MS Teams", url: "https://teams.microsoft.com/" },
+    { title: "YouTube", url: "https://www.youtube.com/" },
+    { title: "Allegro", url: "https://allegro.pl/" },
+    { title: "Letyshops", url: "https://letyshops.com/pl/" },
+    { title: "AliExpress", url: "https://www.aliexpress.com/" },
+    { title: "Instagram", url: "https://www.instagram.com/" },
+    { title: "Messenger", url: "https://www.messenger.com/" },
+    { title: "WhatsApp", url: "https://web.whatsapp.com/" },
+    { title: "Dodaj", url: "#", icon: "➕" },
+];
+
+// Lista motywujących cytatów/powitań (hiszpańskie idiomy z polskim tłumaczeniem i emoji)
+const welcomeMessages = [
+    { spanish: "¡A buenas horas, mangas verdes!", polish: "No, to już za późno! (spóźniłeś się)", icon: "🕒" },
+    { spanish: "A caballo regalado no le mires el diente", polish: "Darowanemu koniowi nie zagląda się w zęby", icon: "🎁" },
+    { spanish: "A duras penas", polish: "Z trudem, ledwo co", icon: "😅" },
+    { spanish: "A otro perro con ese hueso", polish: "Nie dasz mi tak łatwo uwierzyć w to", icon: "🐶" },
+    { spanish: "Agarrar al toro por los cuernos", polish: "Chwycić byka za rogi (działać zdecydowanie)", icon: "🐂" },
+    { spanish: "Ahogarse en un vaso de agua", polish: "Topić się w szklance wody (przesadnie dramatyzować)", icon: "💧" },
+    { spanish: "Andarse por las ramas", polish: "Owijać w bawełnę, nie przechodzić do rzeczy", icon: "🌳" },
+    { spanish: "Arrimar el hombro", polish: "Przyłożyć się do pracy, pomóc", icon: "💪" },
+    { spanish: "Barriga llena, corazón contento", polish: "Pełny żołądek, szczęśliwe serce", icon: "🍽️" },
+    { spanish: "Buscarle tres pies al gato", polish: "Szukać dziury w całym", icon: "🐱" },
+    { spanish: "Caballo viejo no aprende trote nuevo", polish: "Starych drzew się nie przesadza (starzy ludzie są przyzwyczajeni)", icon: "🌲" },
+    { spanish: "Caerse del nido", polish: "Być naiwnym, nie znać świata", icon: "🐥" },
+    { spanish: "Cantar las cuarenta", polish: "Powiedzieć komuś home by home", icon: "🎤" },
+    { spanish: "Cenar con las moscas", polish: "Jeść samotnie (nikt cię nie zaprosił)", icon: "🍽️🐝" },
+    { spanish: "Como Pedro por su casa", polish: "Czuć się jak u siebie w domu", icon: "🏠" },
+    { spanish: "Con la mosca detrás de la oreja", polish: "Z przeczuciem, że coś jest nie tak", icon: "🐝👂" },
+    { spanish: "Costar un ojo de la cara", polish: "Kosztować majątek", icon: "💸" },
+    { spanish: "Cría cuervos y te sacarán los ojos", polish: "Gdy dobrze ustępujesz, wzmacniasz przeciwnika", icon: "🦅" },
+    { spanish: "Dar en el clavo", polish: "Trafić w sedno", icon: "🎯" },
+    { spanish: "Dar gato por liebre", polish: "Nabijać kogoś w butelkę", icon: "🐱🐰" },
+    { spanish: "Dar la callada por respuesta", polish: "Milczeć w odpowiedzi, nie odezwać się", icon: "🤐" },
+    { spanish: "Dar la lata", polish: "Zawracać komuś głowę, być dokuczliwym", icon: "📢" },
+    { spanish: "Dar la semana", polish: "Dać komuś w kość przez cały tydzień", icon: "🗓️😫" },
+    { spanish: "Dar la vuelta a la tortilla", polish: "Odwrócić sytuację (na swoją korzyść)", icon: "🔄" },
+    { spanish: "Dormir a pierna suelta", polish: "Spać jak suseł (bardzo głęboko)", icon: "💤" },
+    { spanish: "Echar leña al fuego", polish: "Podsycać ogień, pogarszać sprawę", icon: "🔥" },
+    { spanish: "Echar un vistazo", polish: "Rzucić okiem", icon: "👀" },
+    { spanish: "El mundo es un pañuelo", polish: "Świat jest mały (niespodziewane spotkania)", icon: "🌏🧣" },
+    { spanish: "El que ríe último ríe mejor", polish: "Kto się śmieje ostatni, ten się śmieje najlepiej", icon: "😂" },
+    { spanish: "El tiempo lo cura todo", polish: "Czas leczy rany", icon: "⏳" },
+    { spanish: "Encender la mecha", polish: "Rozpalić konflikt", icon: "💥" },
+    { spanish: "Encontrar la horma de su zapato", polish: "Znaleźć bratnią duszę", icon: "🧥👞" },
+    { spanish: "Estar al loro", polish: "Być czujnym, mieć oczy dookoła głowy", icon: "🔔" },
+    { spanish: "Estar como pez en el agua", polish: "Czuć się jak ryba w wodzie", icon: "🐟" },
+    { spanish: "Estar en babia", polish: "Być zamyślonym, nieobecnym myślami", icon: "☁️" },
+    { spanish: "Estar en el ojo del huracán", polish: "Być w samym środku problemu", icon: "🌪️" },
+    { spanish: "Estar en pelotas", polish: "Być nagim, bez niczego", icon: "🍑" },
+    { spanish: "Estar hecho polvo", polish: "Być wykończonym, zmęczonym", icon: "🥵" },
+    { spanish: "Estar más sano que una pera", polish: "Być zdrów jak ryba", icon: "🍐" },
+    { spanish: "Estar para el arrastre", polish: "Być kompletnie wyczerpanym", icon: "🐾" },
+    { spanish: "Estar sin blanca", polish: "Nie mieć nawet grosza", icon: "🏦" },
+    { spanish: "Estar traspuesto", polish: "Być całkowicie zdezorientowanym", icon: "🤯" },
+    { spanish: "Estar hasta las narices", polish: "Mieć czegoś po kokardę", icon: "🤢" },
+    { spanish: "Filtrar la gota que colma el vaso", polish: "Dosięgnąć punktu krytycznego", icon: "💧🔝" },
+    { spanish: "Hacerse la boca agua", polish: "Nie móc się oprzeć (o jedzeniu)", icon: "🤤" },
+    { spanish: "Hacerse el sueco", polish: "Udawać Greka – udawać, że się nie rozumie", icon: "🤷‍♂️" },
+    { spanish: "Hacer de tripas corazón", polish: "Wziąć się w garść, zmusić się", icon: "💪🫀" },
+    { spanish: "Hacer la vista gorda", polish: "Przymykać oko", icon: "🙈" },
+    { spanish: "Ir al grano", polish: "Przejść do rzeczy", icon: "🎯" },
+    { spanish: "Irse de la lengua", polish: "Palnąć coś mimochodem, tracić tajemnicę", icon: "🗣️💨" },
+    { spanish: "Irse por los cerros de Úbeda", polish: "Zbaczać z tematu", icon: "🛤️⛰️" },
+    { spanish: "Jugar con fuego", polish: "Grać z ogniem, ryzykować", icon: "🔥❌" },
+    { spanish: "La cuenta me sale", polish: "Zgadzają mi się rachunki", icon: "✅🧮" },
+    { spanish: "La gota que colmó el vaso", polish: "Kropla, która przepełniła czarę goryczy", icon: "💧🏺" },
+    { spanish: "La leche", polish: "Niesamowite, fantastyczne (także “syf” w zależności od kontekstu)", icon: "🥛" },
+    { spanish: "Llevarse el gato al agua", polish: "Osiągnąć swój cel, wygrać trudne zadanie", icon: "🚣" },
+    { spanish: "Llover a cántaros", polish: "Lać jak z cebra", icon: "🌧️" },
+    { spanish: "Luna de miel", polish: "Miesiąc miodowy", icon: "🛫💑" },
+    { spanish: "Matar el gusanillo", polish: "Zaspokoić pierwsze uczucie głodu (zjeść coś małego)", icon: "🐛" },
+    { spanish: "Meter la pata", polish: "Popełnić gafę", icon: "🐾😬" },
+    { spanish: "Meterse en camisa de once varas", polish: "Wpakować się w coś kłopotliwego", icon: "🤕👕" },
+    { spanish: "Más vale tarde que nunca", polish: "Lepiej późno niż wcale", icon: "🕰️" },
+    { spanish: "Más vale pájaro en mano que ciento volando", polish: "Lepszy wróbel w garści niż gołąb na dachu", icon: "🐦💼" },
+    { spanish: "Montarse películas", polish: "Wymyślać własne wersje, dramatyzować", icon: "🎥🎭" },
+    { spanish: "No dar palo al agua", polish: "Nie kiwnąć palcem", icon: "🛋️" },
+    { spanish: "No hay mal que por bien no venga", polish: "Nie ma tego złego, co by na dobre nie wyszło", icon: "🌧️➡️😁" },
+    { spanish: "No ver tres en un burro", polish: "Być krótkowzrocznym (nie widzieć dobrze)", icon: "👓🐴" },
+    { spanish: "No ver la hora", polish: "Nie móc się doczekać", icon: "⏳😬" },
+    { spanish: "Ojos que no ven, corazón que no siente", polish: "Oczy nie widzą, serce nie boli", icon: "🚫👀" },
+    { spanish: "Pasar la noche en blanco", polish: "Spędzić noc na czuwaniu (nie zmrużyć oka)", icon: "🌙😴" },
+    { spanish: "Pasarse de la raya", polish: "Przesadzić, przekroczyć granicę", icon: "🚫🚧" },
+    { spanish: "Pedir peras al olmo", polish: "Chcieć czegoś niemożliwego", icon: "🍐🚫" },
+    { spanish: "Perder la cabeza", polish: "Stracić głowę, oszaleć", icon: "🤯" },
+    { spanish: "Perder un tren", polish: "Przegapić okazję", icon: "🚂❌" },
+    { spanish: "Pintar la raya", polish: "Ustalać granicę, wyznaczać limity", icon: "🖊️📏" },
+    { spanish: "Pisar huevos", polish: "Działać ostrożnie, iść na palcach", icon: "🥚🥚" },
+    { spanish: "Ponerse las pilas", polish: "Zebrać się w sobie, przyspieszyć", icon: "🔋⚡" },
+    { spanish: "Poner los pies en la tierra", polish: "Zejść na ziemię", icon: "🌍⬇️" },
+    { spanish: "Poner un poco de tu parte", polish: "Dołożyć coś od siebie", icon: "🤝🧩" },
+    { spanish: "Quedarse con la boca abierta", polish: "Zaniemówić z wrażenia", icon: "😲" },
+    { spanish: "Quedarse de piedra", polish: "Zastygnąć z wrażenia", icon: "🗿" },
+    { spanish: "Quemar las naves", polish: "Płynąć pod prąd, nie mieć odwrotu", icon: "🚢🔥" },
+    { spanish: "Sacarle las castañas del fuego a alguien", polish: "Wyręczyć kogoś, załatwić coś za kogoś", icon: "🧰🔥" },
+    { spanish: "Salirse con la suya", polish: "Wyjść na swoje (dostać, co się chce)", icon: "🏆" },
+    { spanish: "Ser uña y carne", polish: "Być nierozłącznymi", icon: "🤝❤️" },
+    { spanish: "Ser la oveja negra", polish: "Być czarną owcą (członkiem rodziny/grupy, wyróżniającym się negatywnie)", icon: "🐑⚫" },
+    { spanish: "Ser la leche", polish: "Być rewelacyjnym / lub – być straszny (kontekst zależy)", icon: "🐄🥛" },
+    { spanish: "Ser pan comido", polish: "Być bułką z masłem (bardzo łatwe)", icon: "🍞🎂" },
+    { spanish: "Ser un boca chancla", polish: "Być gadułą (ktoś, kto mówi za dużo)", icon: "🗣️💨" },
+    { spanish: "Ser un erizo", polish: "Być nietowarzyskim (jeżozwierz; ktoś kto odstrasza)", icon: "🦔" },
+    { spanish: "Ser un cero a la izquierda", polish: "Być nikim, nic nie znaczyć", icon: "🥉🔙" },
+    { spanish: "Ser un hueso duro de roer", polish: "Być twardym orzechem do zgryzienia", icon: "🥊" },
+    { spanish: "Ser un salvavidas", polish: "Być zbawieniem, ratunkiem", icon: "🛟" },
+    { spanish: "Sin comerlo ni beberlo", polish: "Bez powodu, ni z tego ni z owego", icon: "🚫🍽️🚫🥤" },
+    { spanish: "Sobra sal en la herida", polish: "Sypać sól na ranę", icon: "🧂🔪" },
+    { spanish: "Tener cara dura", polish: "Mieć bezczelność, tupet", icon: "😏" },
+    { spanish: "Tener la sartén por el mango", polish: "Mieć kontrolę nad sytuacją", icon: "🍳🍴" },
+    { spanish: "Tener más miedo que vergüenza", polish: "Bardziej się bać niż wstydzić", icon: "🐀😱" },
+    { spanish: "Tener un nudo en la garganta", polish: "Mieć gulę w gardle (wzruszenie)", icon: "😢🍽️" },
+    { spanish: "Tocar madera", polish: "Pukać w niemalowane (na szczęście)", icon: "🌲🐂" }
+];
+
+
+// Funkcja do grupowania zakładek według folderów
+const groupBookmarksByFolder = (bookmarks) => {
+    const grouped = {};
+    bookmarks.forEach(bookmark => {
+        const folderName = bookmark.folder; // Używamy tylko nazwy folderu najwyższego poziomu
+        if (!grouped[folderName]) {
+            grouped[folderName] = [];
+        }
+        grouped[folderName].push(bookmark);
+    });
+    return grouped;
+};
+
+const splashBackgrounds = [
+    'linear-gradient(135deg, #a8dadc, #457b9d)', // Blue-Cyan
+    'linear-gradient(135deg, #f8edeb, #fec89a)', // Peach-Orange
+    'linear-gradient(135deg, #e0f7fa, #80deea)', // Light Blue-Turquoise
+    'linear-gradient(135deg, #e8f5e9, #a5d6a7)', // Light Green-Green
+    'linear-gradient(135deg, #f3e5f5, #ce93d8)', // Light Purple-Purple
+    'linear-gradient(135deg, #fff3e0, #ffcc80)', // Light Orange-Deep Orange
+    'linear-gradient(135deg, #ffebee, #ef9a9a)', // Light Red-Red
+    'linear-gradient(135deg, #f0f4c3, #cddc39)', // Light Lime-Lime
+];
+
+const App = () => {
+    const [searchTerm, setSearchTerm] = useState('');
+    const [groupedBookmarks, setGroupedBookmarks] = useState({});
+    const [openCategories, setOpenCategories] = useState([]);
+    
+    const [showSplashContent, setShowSplashContent] = useState(true);
+    const [splashFadingOut, setSplashFadingOut] = useState(false);
+    
+    const [currentMessage, setCurrentMessage] = useState({ spanish: '', polish: '', icon: '' });
+    const [currentSplashBackground, setCurrentSplashBackground] = useState('');
+    const [showMainContent, setShowMainContent] = useState(false);
+
+    const [greeting, setGreeting] = useState('');
+    // Removed weather-related states: weather, weatherLoading, weatherError, currentLocation
+
+    // State for Gemini API summary feature
+    const [summaryModal, setSummaryModal] = useState({
+        isOpen: false,
+        title: '',
+        summary: '',
+        loading: false,
+        error: null,
+    });
+
+    // Function to get dynamic greeting based on time in Poland (GMT+2 or GMT+1)
+    const getDynamicGreeting = () => {
+        const now = new Date();
+        const hour = now.getHours(); // Get local hour
+
+        if (hour >= 6 && hour < 12) {
+            return "Dzień dobry,";
+        } else if (hour >= 12 && hour < 18) {
+            return "Witaj,";
+        } else if (hour >= 18 && hour < 22) {
+            return "Dobry wieczór,";
+        } else {
+            return "Hej,";
+        }
+    };
+
+    // Removed getWeatherEmoji function
+
+    // Removed fetchWeatherData function
+
+    // Function to generate summary using Gemini API
+    const generateBookmarkSummary = async (url, title) => {
+        setSummaryModal({
+            isOpen: true,
+            title: `Streszczenie: ${title}`,
+            summary: 'Generowanie streszczenia...',
+            loading: true,
+            error: null,
+        });
+
+        try {
+            const prompt = `Podsumuj zawartość strony internetowej pod adresem: ${url}. Streszczenie powinno być zwięzłe i zawierać najważniejsze informacje.`;
+
+            let chatHistory = [];
+            chatHistory.push({ role: "user", parts: [{ text: prompt }] });
+
+            const payload = { contents: chatHistory };
+            const apiKey = ""; // Leave as-is, Canvas will provide it at runtime.
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(`Błąd API Gemini: ${errorData.error.message || response.statusText}`);
+            }
+
+            const result = await response.json();
+            let generatedText = 'Nie udało się wygenerować streszczenia.';
+
+            if (result.candidates && result.candidates.length > 0 &&
+                result.candidates[0].content && result.candidates[0].content.parts &&
+                result.candidates[0].content.parts.length > 0) {
+                generatedText = result.candidates[0].content.parts[0].text;
+            }
+
+            setSummaryModal(prevState => ({
+                ...prevState,
+                summary: generatedText,
+                loading: false,
+            }));
+
+        } catch (error) {
+            console.error("Błąd generowania streszczenia:", error);
+            setSummaryModal(prevState => ({
+                ...prevState,
+                summary: 'Wystąpił błąd podczas generowania streszczenia. Spróbuj ponownie później.',
+                loading: false,
+                error: error.message,
+            }));
+        }
+    };
+
+    const closeSummaryModal = () => {
+        setSummaryModal({
+            isOpen: false,
+            title: '',
+            summary: '',
+            loading: false,
+            error: null,
+        });
+    };
+
+
+    useEffect(() => {
+        // Set dynamic greeting
+        setGreeting(getDynamicGreeting());
+
+        // Set a random welcome message and background
+        const randomIndex = Math.floor(Math.random() * welcomeMessages.length);
+        setCurrentMessage(welcomeMessages[randomIndex]);
+
+        const randomBgIndex = Math.floor(Math.random() * splashBackgrounds.length);
+        setCurrentSplashBackground(splashBackgrounds[randomBgIndex]);
+
+        const splashDisplayDuration = 5000;
+        const fadeOutTransitionDuration = 500;
+
+        const timer1 = setTimeout(() => {
+            setSplashFadingOut(true);
+            setShowMainContent(true);
+        }, splashDisplayDuration);
+
+        const timer2 = setTimeout(() => {
+            setShowSplashContent(false);
+        }, splashDisplayDuration + fadeOutTransitionDuration);
+
+        // Removed weather fetching logic from useEffect
+
+        // Dynamically load the weather widget script
+        const scriptId = 'weatherwidget-io-js';
+        if (!document.getElementById(scriptId)) {
+            const script = document.createElement('script');
+            script.id = scriptId;
+            script.src = 'https://weatherwidget.io/js/widget.min.js';
+            document.body.appendChild(script);
+        }
+
+        return () => {
+            clearTimeout(timer1);
+            clearTimeout(timer2);
+            // Optionally, remove the weather widget script if component unmounts
+            const existingScript = document.getElementById(scriptId);
+            if (existingScript) {
+                existingScript.remove();
+            }
+        };
+    }, []); // Empty dependency array, to run only once on mount
+
+    useEffect(() => {
+        const lowerCaseSearchTerm = searchTerm.toLowerCase();
+        // Ensure all properties exist before calling toLowerCase
+        const filteredRawBookmarks = allBookmarksData.filter(bookmark => {
+            const titleMatch = bookmark.title && bookmark.title.toLowerCase().includes(lowerCaseSearchTerm);
+            const urlMatch = bookmark.url && bookmark.url.toLowerCase().includes(lowerCaseSearchTerm);
+            const descriptionMatch = bookmark.description && bookmark.description.toLowerCase().includes(lowerCaseSearchTerm);
+            return titleMatch || urlMatch || descriptionMatch;
+        });
+
+        const newGroupedBookmarks = groupBookmarksByFolder(filteredRawBookmarks);
+        setGroupedBookmarks(newGroupedBookmarks);
+
+        // Logic to automatically open categories that contain search results
+        if (searchTerm) {
+            const categoriesToOpen = Object.keys(newGroupedBookmarks).filter(folderName =>
+                newGroupedBookmarks[folderName].length > 0
+            );
+            setOpenCategories(categoriesToOpen);
+        } else {
+            // If search term is empty, collapse all categories
+            setOpenCategories([]);
+        }
+
+    }, [searchTerm]); // Dependency on searchTerm
+
+    // Funkcja do przełączania stanu rozwinięcia kategorii
+    const toggleCategory = (categoryName) => {
+        setOpenCategories(prevOpenCategories => {
+            if (prevOpenCategories.includes(categoryName)) {
+                // Jeśli kategoria jest otwarta, zamknij ją
+                return prevOpenCategories.filter(name => name !== categoryName);
+            } else {
+                // Jeśli kategoria jest zamknięta, otwórz ją
+                return [...prevOpenCategories, categoryName];
+            }
+        });
+    };
+
+    const categoryColors = {
+        "Edukacja": "#E0F7FA", // Light Cyan
+        "Rozrywka": "#FFF3E0", // Light Orange
+        "Hobby": "#E8F5F5",    // Light Green
+        "Poczta": "#E3F2FD",   // Light Blue
+        "Zakupy": "#FCE4EC",   // Light Pink
+        "Zdrowie": "#F3E5F5",  // Light Purple
+        "Finanse": "#FFFDE7",  // Light Yellow
+        "Administracja": "#EFEBE9", // Light Brown
+        "Filmy i TV": "#FFEBEE", // Lighter Red
+        "Dzienniki Szkolne": "#F0F4C3", // Light Lime
+        "Narzędzia Online": "#F5F5F5", // Light Grey
+        "Język Hiszpański": "#E0F2F7", // Lighter Blue
+        "Geografia": "#E6EE9C", // Lime Green
+        "Język Polski": "#FFE0B2", // Orange
+        "Filozofia": "#D1C4E9", // Purple
+        "Podróże": "#C8E6C9", // Green
+        "Rozwój Osobisty": "#B2EBF2", // Cyan
+        "Historia": "#FBE9E7", // Peach
+    };
+
+    return (
+        <div className="app-container">
+            {/* Styles for the simplified design */}
+            <style>
+                {`
+                @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+                * {
+                    margin: 0;
+                    padding: 0;
+                    box-sizing: border-box;
+                }
+
+                body {
+                    font-family: 'Inter', sans-serif;
+                    background: linear-gradient(135deg, #e0eafc, #cfdef3); /* Very light blue gradient */
+                    color: #333;
+                    min-height: 100vh;
+                    overflow-x: hidden;
+                    padding: 20px;
+                    display: flex;
+                    justify-content: center;
+                    align-items: flex-start; /* Align to top for better content flow */
+                }
+
+                /* Splash Screen Styles */
+                .splash-screen {
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    background-color: rgba(0, 0, 0, 0.6); /* Darker overlay */
+                    display: flex;
+                    flex-direction: column; /* Allow content to stack */
+                    justify-content: center;
+                    align-items: center;
+                    z-index: 9999;
+                    opacity: 1;
+                    transition: opacity 0.7s ease-out; /* Slower fade out transition */
+                }
+
+                .splash-screen.fade-out {
+                    opacity: 0;
+                    pointer-events: none; /* Disable interactions after fade out */
+                }
+
+                .splash-message {
+                    font-size: 2.5em; /* Slightly larger font size for idioms */
+                    font-weight: 700;
+                    color: #ffffff; /* Domyślny kolor dla całego komunikatu */
+                    text-shadow: 2px 2px 10px rgba(0, 0, 0, 0.4); /* Stronger shadow */
+                    opacity: 0;
+                    animation: message-fade-in 1.2s ease-out forwards; /* Slower message fade in */
+                    text-align: center;
+                    padding: 0 25px; /* More padding */
+                    line-height: 1.3;
+                }
+
+                .splash-message .icon {
+                    font-size: 1.3em; /* Slightly larger emoji */
+                    margin-right: 12px;
+                }
+
+                .splash-message .spanish-text {
+                    color: #FFFFFF; /* Wyraźny biały kolor dla hiszpańskiego tekstu */
+                    font-weight: 800; /* Pogrubienie dla lepszej widoczności */
+                }
+
+                .splash-message .polish-text {
+                    color: #E0F7FA; /* Lighter blue for translation */
+                    font-weight: 500; /* Medium weight */
+                    display: block; /* New line for polish translation */
+                    margin-top: 10px;
+                    font-size: 0.8em; /* Smaller for translation */
+                }
+
+                /* Main Content Fade In */
+                .main-content-wrapper {
+                    opacity: 0;
+                    transition: opacity 0.7s ease-in; /* Slower fade in */
+                    width: 100%; /* Ensure it takes full width */
+                    max-width: 1000px; /* Match container max-width */
+                }
+
+                .main-content-wrapper.show {
+                    opacity: 1;
+                }
+
+                @keyframes message-fade-in {
+                    0% { opacity: 0; transform: translateY(30px); }
+                    100% { opacity: 1; transform: translateY(0); }
+                }
+
+                .container {
+                    width: 100%; /* Use 100% width within its parent */
+                    margin: 20px auto;
+                    background: #ffffff;
+                    border-radius: 16px; /* More rounded corners */
+                    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1); /* Softer, larger shadow */
+                    padding: 35px; /* More padding */
+                    overflow: hidden; /* Ensure content stays within bounds */
+                }
+
+                .header {
+                    text-align: center;
+                    padding-bottom: 30px; /* More padding */
+                    margin-bottom: 35px; /* More margin */
+                    border-bottom: 1px solid #e0e0e0;
+                }
+
+                .header h1 {
+                    font-size: 3em; /* Larger heading */
+                    font-weight: 700;
+                    color: #2c3e50;
+                    margin-bottom: 12px;
+                    animation: text-fade-in 1s ease-out forwards; /* New animation for header */
+                }
+
+                .header p {
+                    font-size: 1.15em; /* Slightly larger text */
+                    color: #7f8c8d;
+                    animation: text-fade-in 1.2s ease-out forwards 0.2s; /* Delayed animation */
+                }
+
+                @keyframes text-fade-in {
+                    0% { opacity: 0; transform: translateY(10px); }
+                    100% { opacity: 1; transform: translateY(0); }
+                }
+
+                /* Removed weather-info-container, weather-location, weather-forecast, weather-item, weather-icon, time, temp, humidity, precipitation, weather-error styles */
+
+                /* Search Bar Styles */
+                .search-bar-container {
+                    margin-bottom: 35px; /* More margin */
+                    padding: 18px; /* More padding */
+                    background: #ffffff;
+                    border-radius: 12px; /* More rounded corners */
+                    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.07); /* Softer shadow */
+                    display: flex;
+                    align-items: center;
+                    gap: 15px; /* More space */
+                    transition: box-shadow 0.3s ease;
+                }
+
+                .search-bar-container:focus-within {
+                    box-shadow: 0 6px 20px rgba(41, 128, 185, 0.25); /* Stronger shadow on focus */
+                }
+
+                .search-input {
+                    flex-grow: 1;
+                    padding: 12px 20px; /* More padding */
+                    border: 1px solid #ddd; /* Lighter border */
+                    border-radius: 10px; /* More rounded corners */
+                    font-size: 1.05em; /* Slightly larger font */
+                    outline: none;
+                    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+                }
+
+                .search-input:focus {
+                    border-color: #5dade2; /* Lighter blue on focus */
+                    box-shadow: 0 0 8px rgba(93, 173, 226, 0.4); /* Softer glow */
+                }
+
+                /* Quick Access Section Styles */
+                .quick-access-section {
+                    display: flex;
+                    flex-wrap: wrap;
+                    justify-content: center;
+                    gap: 20px; /* More space */
+                    margin-bottom: 45px; /* More margin */
+                    padding: 25px; /* More padding */
+                    background: #eef5fc; /* Lighter background for quick access */
+                    border-radius: 14px; /* More rounded corners */
+                    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05); /* Subtle shadow */
+                }
+
+                .quick-access-item {
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+                    width: 90px; /* Larger size */
+                    height: 90px; /* Larger size */
+                    background: #ffffff;
+                    border-radius: 12px; /* More rounded corners */
+                    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08); /* Softer shadow */
+                    transition: transform 0.25s ease, box-shadow 0.25s ease, background-color 0.25s ease;
+                    cursor: pointer;
+                    text-align: center;
+                    text-decoration: none;
+                    color: #333;
+                    position: relative; /* For potential future animations */
+                    overflow: hidden; /* Hide overflow for icon scaling */
+                }
+
+                .quick-access-item:hover {
+                    transform: translateY(-7px) scale(1.05); /* More pronounced lift and scale */
+                    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15); /* Stronger shadow on hover */
+                    background-color: #f0f8ff; /* Very light blue on hover */
+                }
+
+                .quick-access-icon {
+                    font-size: 2.5em; /* Larger icon size */
+                    margin-bottom: 8px;
+                    width: 45px; /* Larger favicon size */
+                    height: 45px; /* Larger favicon size */
+                    object-fit: contain;
+                    transition: transform 0.25s ease;
+                }
+                .quick-access-item:hover .quick-access-icon {
+                    transform: scale(1.1); /* Subtle icon zoom on hover */
+                }
+
+                .quick-access-title {
+                    font-size: 0.85em; /* Slightly larger text */
+                    font-weight: 600;
+                    color: #555;
+                }
+
+                .category-section {
+                    margin-bottom: 30px;
+                    padding: 25px;
+                    border-radius: 16px; /* More rounded corners */
+                    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.06); /* Softer shadow */
+                    transition: background-color 0.3s ease;
+                }
+
+                .category-section h2 {
+                    font-size: 2.2em; /* Larger heading */
+                    color: #2c3e50;
+                    margin-bottom: 25px; /* More margin */
+                    display: flex;
+                    align-items: center;
+                    gap: 12px; /* More space */
+                    padding-bottom: 12px; /* More padding */
+                    border-bottom: 1px solid rgba(0,0,0,0.08); /* Lighter border */
+                    cursor: pointer;
+                    transition: color 0.2s ease;
+                }
+
+                .category-section h2:hover {
+                    color: #3498db; /* Blue on hover */
+                }
+
+                .category-section h2::after {
+                    content: '▼';
+                    margin-left: auto;
+                    transition: transform 0.3s ease;
+                    font-size: 0.8em; /* Smaller arrow */
+                    color: #7f8c8d;
+                }
+
+                .category-section.open h2::after {
+                    content: '▲';
+                    transform: rotate(0deg);
+                }
+
+                .category-section ul {
+                    list-style: none;
+                    padding: 0;
+                    max-height: 0;
+                    overflow: hidden;
+                    transition: max-height 0.6s ease-out; /* Slower, smoother transition */
+                }
+
+                .category-section.open ul {
+                    max-height: 1500px; /* Increased value to accommodate more content */
+                }
+
+                .category-section ul li {
+                    margin-bottom: 15px; /* More margin */
+                    background: rgba(255, 255, 255, 0.85); /* Slightly less transparent */
+                    padding: 15px 20px; /* More padding */
+                    border-radius: 10px; /* More rounded corners */
+                    transition: background-color 0.2s ease, transform 0.1s ease;
+                    display: flex;
+                    align-items: center;
+                    gap: 15px; /* More space */
+                    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04); /* Subtle shadow */
+                }
+
+                .category-section ul li:hover {
+                    background-color: rgba(255, 255, 255, 0.98); /* Almost opaque on hover */
+                    transform: translateX(5px); /* Subtle slide effect */
+                    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); /* Slightly stronger shadow */
+                }
+
+                .category-section ul li .bookmark-link-content {
+                    display: flex;
+                    flex-direction: column;
+                    flex-grow: 1;
+                }
+
+                .category-section ul li a {
+                    text-decoration: none;
+                    color: #34495e;
+                    font-size: 1.2em; /* Larger font */
+                    font-weight: 600;
+                    display: block;
+                    word-wrap: break-word;
+                    transition: color 0.2s ease;
+                }
+
+                .category-section ul li a:hover {
+                    color: #2980b9;
+                    text-decoration: underline;
+                }
+
+                .category-section ul li .bookmark-description {
+                    font-size: 0.95em; /* Slightly larger */
+                    color: #7f8c8d;
+                    margin-top: 6px; /* More margin */
+                    line-height: 1.4;
+                }
+
+                /* Favicon in category list */
+                .category-favicon {
+                    width: 28px; /* Larger favicon */
+                    height: 28px; /* Larger favicon */
+                    object-fit: contain;
+                    flex-shrink: 0;
+                }
+
+                /* No results message */
+                .no-results-message {
+                    text-align: center;
+                    padding: 40px; /* More padding */
+                    font-size: 1.3em; /* Larger font */
+                    color: #7f8c8d;
+                    background: #f8f9fa;
+                    border-radius: 12px;
+                    margin-top: 40px; /* More margin */
+                    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+                }
+
+                .no-results-message a {
+                    color: #2980b9;
+                    text-decoration: none;
+                    font-weight: 700; /* Bolder */
+                    transition: color 0.2s ease;
+                }
+
+                .no-results-message a:hover {
+                    text-decoration: underline;
+                    color: #3498db;
+                }
+
+                /* Bounce effect for search results */
+                @keyframes bounce-in {
+                    0% { transform: scale(0.9); opacity: 0; }
+                    50% { transform: scale(1.03); opacity: 1; } /* Slightly less bounce */
+                    100% { transform: scale(1); }
+                }
+
+                .category-section ul li.search-result-bounce {
+                    animation: bounce-in 0.4s ease-out; /* Slightly faster bounce */
+                }
+
+                /* Summary Button Styles */
+                .summary-button {
+                    background-color: #3498db; /* Blue button */
+                    color: white;
+                    border: none;
+                    border-radius: 8px;
+                    padding: 8px 12px;
+                    font-size: 0.85em;
+                    cursor: pointer;
+                    transition: background-color 0.2s ease, transform 0.1s ease;
+                    margin-left: auto; /* Push to the right */
+                    display: flex;
+                    align-items: center;
+                    gap: 5px;
+                    white-space: nowrap; /* Prevent text wrapping */
+                }
+
+                .summary-button:hover {
+                    background-color: #2980b9;
+                    transform: translateY(-1px);
+                }
+
+                .summary-button:active {
+                    transform: translateY(0);
+                }
+
+                .summary-button:disabled {
+                    background-color: #cccccc;
+                    cursor: not-allowed;
+                }
+
+                /* Modal Styles */
+                .modal-overlay {
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    background-color: rgba(0, 0, 0, 0.6);
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    z-index: 10000;
+                    opacity: 0;
+                    transition: opacity 0.3s ease-out;
+                }
+
+                .modal-overlay.open {
+                    opacity: 1;
+                }
+
+                .modal-content {
+                    background-color: #ffffff;
+                    padding: 30px;
+                    border-radius: 16px;
+                    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+                    max-width: 600px;
+                    width: 90%;
+                    transform: translateY(-20px);
+                    opacity: 0;
+                    transition: transform 0.3s ease-out, opacity 0.3s ease-out;
+                    position: relative;
+                }
+
+                .modal-overlay.open .modal-content {
+                    transform: translateY(0);
+                    opacity: 1;
+                }
+
+                .modal-header {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    margin-bottom: 20px;
+                    padding-bottom: 10px;
+                    border-bottom: 1px solid #eee;
+                }
+
+                .modal-header h3 {
+                    font-size: 1.8em;
+                    color: #2c3e50;
+                    margin: 0;
+                }
+
+                .modal-close-button {
+                    background: none;
+                    border: none;
+                    font-size: 1.8em;
+                    color: #7f8c8d;
+                    cursor: pointer;
+                    transition: color 0.2s ease;
+                }
+
+                .modal-close-button:hover {
+                    color: #333;
+                }
+
+                .modal-body {
+                    font-size: 1.1em;
+                    color: #555;
+                    line-height: 1.6;
+                    max-height: 300px; /* Limit height for scroll */
+                    overflow-y: auto; /* Enable scrolling */
+                    padding-right: 10px; /* Space for scrollbar */
+                }
+
+                .modal-body p {
+                    margin-bottom: 10px;
+                }
+
+                .modal-body.loading {
+                    text-align: center;
+                    font-style: italic;
+                    color: #888;
+                }
+
+                .modal-body.error {
+                    color: #e74c3c;
+                    font-weight: 600;
+                }
+
+
+                /* Responsive adjustments */
+                @media (max-width: 768px) {
+                    body {
+                        padding: 15px;
+                    }
+                    .container {
+                        padding: 25px;
+                        margin: 15px auto;
+                    }
+                    .header h1 {
+                        font-size: 2.5em;
+                    }
+                    .header p {
+                        font-size: 1em;
+                    }
+                    /* Removed weather-related responsive styles */
+                    .quick-access-item {
+                        width: 80px;
+                        height: 80px;
+                    }
+                    .quick-access-icon {
+                        font-size: 2em;
+                        width: 40px;
+                        height: 40px;
+                    }
+                    .quick-access-title {
+                        font-size: 0.75em;
+                    }
+                    .category-section h2 {
+                        font-size: 2em;
+                    }
+                    .category-section ul li {
+                        padding: 12px 15px;
+                        gap: 10px;
+                        flex-wrap: wrap; /* Allow buttons to wrap */
+                    }
+                    .category-section ul li a {
+                        font-size: 1.05em;
+                    }
+                    .category-favicon {
+                        width: 24px;
+                        height: 24px;
+                    }
+                    .no-results-message {
+                        padding: 25px;
+                        font-size: 1.1em;
+                    }
+                    .modal-content {
+                        padding: 20px;
+                        width: 95%;
+                    }
+                    .modal-header h3 {
+                        font-size: 1.5em;
+                    }
+                    .modal-close-button {
+                        font-size: 1.5em;
+                    }
+                    .modal-body {
+                        font-size: 1em;
+                    }
+                    .summary-button {
+                        margin-left: 0; /* Remove left margin for better wrapping */
+                        margin-top: 10px; /* Add top margin if wrapped */
+                        width: 100%; /* Make buttons full width when wrapped */
+                        justify-content: center; /* Center content in full-width buttons */
+                    }
+                }
+
+                @media (max-width: 480px) {
+                    body {
+                        padding: 10px;
+                    }
+                    .container {
+                        padding: 20px;
+                        margin: 10px auto;
+                    }
+                    .header h1 {
+                        font-size: 2em;
+                    }
+                    .header p {
+                        font-size: 0.9em;
+                    }
+                    /* Removed weather-related responsive styles */
+                    .quick-access-item {
+                        width: 70px;
+                        height: 70px;
+                    }
+                    .quick-access-icon {
+                        font-size: 1.8em;
+                        width: 35px;
+                        height: 35px;
+                    }
+                    .quick-access-title {
+                        font-size: 0.65em;
+                    }
+                    .category-section h2 {
+                        font-size: 1.6em;
+                    }
+                    .category-section ul li {
+                        padding: 10px 12px;
+                    }
+                    .category-section ul li a {
+                        font-size: 0.95em;
+                    }
+                    .category-favicon {
+                        width: 20px;
+                        height: 20px;
+                    }
+                    .no-results-message {
+                        padding: 20px;
+                        font-size: 1em;
+                    }
+                    .summary-button {
+                        padding: 6px 10px;
+                        font-size: 0.75em;
+                    }
+                }
+                `}
+            </style>
+
+            {showSplashContent && ( // Render splash screen only if showSplashContent is true
+                <div className={`splash-screen ${splashFadingOut ? 'fade-out' : ''}`} style={{ background: currentSplashBackground }}>
+                    <div className="splash-message">
+                        <span className="icon">{currentMessage.icon}</span>
+                        <span className="spanish-text">{currentMessage.spanish}</span> <span className="polish-text">{currentMessage.polish}</span>
+                    </div>
+                </div>
+            )}
+
+            <div className={`main-content-wrapper ${showMainContent ? 'show' : ''}`}>
+                <div className="container">
+                    <div className="header">
+                        <h1>{greeting}</h1>
+                        {/* Weather Widget Integration */}
+                        <div className="weather-widget-container" style={{ marginBottom: '20px' }}>
+                            <a className="weatherwidget-io" href="https://forecast7.com/pl/52d3421d24/wolomin/" data-label_1="WOŁOMIN" data-icons="Climacons Animated" data-mode="Forecast" data-days="3" data-theme="weather_one">WOŁOMIN</a>
+                        </div>
+                        <p>Prosty i przejrzysty menedżer Twoich ulubionych stron.</p>
+                    </div>
+
+                    {/* Search Bar */}
+                    <div className="search-bar-container">
+                        <input
+                            type="text"
+                            placeholder="Wyszukaj zakładki..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                    </div>
+
+                    {/* Sekcja szybkiego dostępu */}
+                    <div className="quick-access-section">
+                        {quickAccessLinks.map((link, index) => (
+                            <a href={link.url} target="_blank" rel="noopener noreferrer" key={index} className="quick-access-item">
+                                {/* Warunkowe renderowanie ikony lub favicon */}
+                                {link.icon ? (
+                                    <span className="quick-access-icon">{link.icon}</span>
+                                ) : (
+                                    <img
+                                        src={getFaviconUrl(link.url) || "https://placehold.co/40x40/cccccc/000000?text=?"}
+                                        alt={link.title}
+                                        className="quick-access-icon"
+                                        onError={(e) => { e.target.onerror = null; e.target.src="https://placehold.co/40x40/cccccc/000000?text=?" }}
+                                    />
+                                )}
+                                <div className="quick-access-title">{link.title}</div>
+                            </a>
+                        ))}
+                    </div>
+
+                    {/* Warunkowe renderowanie wyników wyszukiwania lub komunikatu */}
+                    {Object.keys(groupedBookmarks).length > 0 ? (
+                        Object.keys(groupedBookmarks).map(folderName => (
+                            <div
+                                key={folderName}
+                                // Add 'open' class if the category is in openCategories state
+                                className={`category-section ${openCategories.includes(folderName) ? 'open' : ''}`}
+                                style={{ backgroundColor: categoryColors[folderName] || '#F5F5F5' }} // Domyślny kolor, jeśli brak w mapie
+                            >
+                                {/* Make the h2 clickable to toggle category */}
+                                <h2 onClick={() => toggleCategory(folderName)}>
+                                    {/* Display category icon if available, otherwise default to a folder emoji */}
+                                    {allBookmarksData.find(b => b.folder === folderName)?.icon || '📁'} {folderName}
+                                </h2>
+                                <ul>
+                                    {groupedBookmarks[folderName].map((bookmark, index) => (
+                                        <li key={index} className={searchTerm ? 'search-result-bounce' : ''}>
+                                            <img
+                                                src={getFaviconUrl(bookmark.url) || "https://placehold.co/24x24/cccccc/000000?text=?"}
+                                                alt={bookmark.title}
+                                                className="category-favicon"
+                                                onError={(e) => { e.target.onerror = null; e.target.src="https://placehold.co/24x24/cccccc/000000?text=?" }}
+                                            />
+                                            <div className="bookmark-link-content">
+                                                <a href={bookmark.url} target="_blank" rel="noopener noreferrer">
+                                                    {bookmark.title}
+                                                </a>
+                                                {bookmark.description && (
+                                                    <div className="bookmark-description">{bookmark.description}</div>
+                                                )}
+                                            </div>
+                                            {/* Button for Gemini API summary feature */}
+                                            <button
+                                                className="summary-button"
+                                                onClick={() => generateBookmarkSummary(bookmark.url, bookmark.title)}
+                                                disabled={summaryModal.loading}
+                                            >
+                                                ✨ Podsumuj
+                                            </button>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        ))
+                    ) : (
+                        searchTerm && (
+                            <div className="no-results-message">
+                                Brak wyników dla "{searchTerm}". <a href={`https://www.google.com/search?q=${encodeURIComponent(searchTerm)}`} target="_blank" rel="noopener noreferrer">Zapytaj Google :)</a>
+                            </div>
+                        )
+                    )}
+                </div>
+            </div>
+
+            {/* Summary Modal */}
+            {summaryModal.isOpen && (
+                <div className={`modal-overlay ${summaryModal.isOpen ? 'open' : ''}`}>
+                    <div className="modal-content">
+                        <div className="modal-header">
+                            <h3>{summaryModal.title}</h3>
+                            <button className="modal-close-button" onClick={closeSummaryModal}>×</button>
+                        </div>
+                        <div className={`modal-body ${summaryModal.loading ? 'loading' : ''} ${summaryModal.error ? 'error' : ''}`}>
+                            {summaryModal.loading && <p>Generowanie streszczenia...</p>}
+                            {summaryModal.error && <p>Błąd: {summaryModal.error}</p>}
+                            {!summaryModal.loading && !summaryModal.error && <p>{summaryModal.summary}</p>}
+                        </div>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+};
+
+export default App;
