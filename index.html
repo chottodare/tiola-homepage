@@ -6,24 +6,71 @@
     <title>Menedżer Zakładek</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        /* General styles */
+        /* General styles with CSS Variables for theming */
+        :root {
+            --primary-color: #3498db;
+            --primary-color-dark: #2980b9;
+            --background-gradient-start: #e0eafc;
+            --background-gradient-end: #cfdef3;
+            --container-bg: #ffffff;
+            --text-primary: #2c3e50;
+            --text-secondary: #7f8c8d;
+            --shadow-light: rgba(0, 0, 0, 0.06);
+            --shadow-medium: rgba(0, 0, 0, 0.1);
+            --quick-access-bg: #eef5fc;
+            --delete-color: #e74c3c;
+            --item-bg: #ffffff;
+            --item-hover-bg: #f0f0f0;
+        }
+
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent; /* Remove tap highlight on mobile */
         }
 
         body {
             font-family: 'Inter', sans-serif;
-            background: linear-gradient(135deg, #e0eafc, #cfdef3); /* Very light blue gradient */
-            color: #333;
+            background: linear-gradient(135deg, var(--background-gradient-start), var(--background-gradient-end));
+            color: var(--text-primary);
             min-height: 100vh;
             overflow-x: hidden;
             padding: 20px;
             display: flex;
             justify-content: center;
-            align-items: flex-start; /* Align to top for better content flow */
+            align-items: flex-start;
+            transition: background 0.5s ease, color 0.5s ease;
         }
+        
+        /* Theme Change Button */
+        .theme-button-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1001;
+        }
+
+        .theme-button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            font-size: 1.5em;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            transition: background-color 0.3s ease, transform 0.2s ease;
+        }
+        .theme-button:hover, .theme-button:active {
+            background-color: var(--primary-color-dark);
+            transform: scale(1.1);
+        }
+
 
         /* Splash Screen Styles */
         .splash-screen {
@@ -32,58 +79,40 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0, 0, 0, 0.6); /* Darker overlay */
+            background-color: rgba(0, 0, 0, 0.6);
             display: flex;
-            flex-direction: column; /* Allow content to stack */
+            flex-direction: column;
             justify-content: center;
             align-items: center;
             z-index: 9999;
             opacity: 1;
-            transition: opacity 0.6s ease-out; /* Slightly slower fade out transition */
-            pointer-events: auto; /* Initially allow pointer events */
+            transition: opacity 0.6s ease-out;
+            pointer-events: auto;
         }
 
         .splash-screen.fade-out {
             opacity: 0;
-            pointer-events: none; /* Disable interactions after fade out */
+            pointer-events: none;
         }
 
         .splash-message {
-            font-size: 2.5em; /* Slightly larger font size for idioms */
+            font-size: 2.5em;
             font-weight: 700;
-            color: #ffffff; /* Domyślny kolor dla całego komunikatu */
-            text-shadow: 2px 2px 10px rgba(0, 0, 0, 0.4); /* Stronger shadow */
+            color: #ffffff;
+            text-shadow: 2px 2px 10px rgba(0, 0, 0, 0.4);
             opacity: 0;
-            animation: message-fade-in 1.2s ease-out forwards; /* Slower message fade in */
+            animation: message-fade-in 1.2s ease-out forwards;
             text-align: center;
-            padding: 0 25px; /* More padding */
+            padding: 0 25px;
             line-height: 1.3;
-        }
-
-        .splash-message .icon {
-            font-size: 1.3em; /* Slightly larger emoji */
-            margin-right: 12px;
-        }
-
-        .splash-message .original-text {
-            color: #FFFFFF; /* Wyraźny biały kolor dla oryginalnego tekstu */
-            font-weight: 800; /* Pogrubienie dla lepszej widoczności */
-        }
-
-        .splash-message .translation-text {
-            color: #E0F7FA; /* Lighter blue for translation */
-            font-weight: 500; /* Medium weight */
-            display: block; /* New line for polish translation */
-            margin-top: 10px;
-            font-size: 0.8em; /* Smaller for translation */
         }
 
         /* Main Content Fade In */
         .main-content-wrapper {
             opacity: 0;
-            transition: opacity 0.7s ease-in; /* Slower fade in */
-            width: 100%; /* Ensure it takes full width */
-            max-width: 1000px; /* Match container max-width */
+            transition: opacity 0.7s ease-in;
+            width: 100%;
+            max-width: 1000px;
         }
 
         .main-content-wrapper.show {
@@ -96,76 +125,97 @@
         }
 
         .container {
-            width: 100%; /* Use 100% width within its parent */
+            width: 100%;
             margin: 20px auto;
-            background: #ffffff;
-            border-radius: 16px; /* More rounded corners */
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1); /* Softer, larger shadow */
-            padding: 35px; /* More padding */
-            overflow: hidden; /* Ensure content stays within bounds */
-        }
-
-        .header {
-            text-align: center;
-            padding-bottom: 30px; /* More padding */
-            margin-bottom: 35px; /* More margin */
-            border-bottom: 1px solid #e0e0e0;
+            background: var(--container-bg);
+            border-radius: 16px;
+            box-shadow: 0 8px 30px var(--shadow-medium);
+            padding: 35px;
+            overflow: hidden;
+            transition: background-color 0.5s ease;
         }
 
         .header h1 {
-            font-size: 3em; /* Larger heading */
+            font-size: 3em;
             font-weight: 700;
-            color: #2c3e50;
+            color: var(--text-primary);
             margin-bottom: 12px;
-            animation: text-fade-in 1s ease-out forwards; /* New animation for header */
-            cursor: pointer; /* Add cursor pointer to indicate clickability */
+            cursor: pointer;
+            min-height: 1.2em; /* Ensure space for text */
         }
 
-        .header h1:hover {
-            text-decoration: underline; /* Underline on hover */
+        /* Greeting Animation */
+        .typewriter-glow .char {
+            opacity: 0;
+            animation: typeGlow 0.1s ease-out forwards;
         }
 
-        .header p {
-            font-size: 1.15em; /* Slightly larger text */
-            color: #7f8c8d;
-            animation: text-fade-in 1.2s ease-out forwards 0.2s; /* Delayed animation */
+        @keyframes typeGlow {
+            0% { 
+                opacity: 0;
+                text-shadow: 0 0 20px rgba(255,255,255,0);
+            }
+            50% { 
+                opacity: 1;
+                text-shadow: 0 0 20px var(--primary-color);
+            }
+            100% { 
+                opacity: 1;
+                text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+            }
         }
 
-        @keyframes text-fade-in {
-            0% { opacity: 0; transform: translateY(10px); }
-            100% { transform: translateY(0); }
-        }
 
         /* Search Bar Styles */
         .search-bar-container {
-            margin-bottom: 35px; /* More margin */
-            padding: 18px; /* More padding */
-            background: #ffffff;
-            border-radius: 12px; /* More rounded corners */
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.07); /* Softer shadow */
+            margin: 0 auto 25px auto;
+            padding: 15px 20px;
+            background: var(--item-bg);
+            border: 1px solid var(--text-secondary);
+            border-radius: 12px;
+            box-shadow: 0 4px 15px var(--shadow-light);
             display: flex;
             align-items: center;
-            gap: 15px; /* More space */
-            transition: box-shadow 0.3s ease;
-        }
-
-        .search-bar-container:focus-within {
-            box-shadow: 0 6px 20px rgba(41, 128, 185, 0.25); /* Stronger shadow on focus */
+            gap: 15px;
+            transition: box-shadow 0.3s ease, background-color 0.5s ease;
+            max-width: 700px;
+            width: 90%;
         }
 
         .search-input {
             flex-grow: 1;
-            padding: 12px 20px; /* More padding */
-            border: 1px solid #ddd; /* Lighter border */
-            border-radius: 10px; /* More rounded corners */
-            font-size: 1.05em; /* Slightly larger font */
+            padding: 10px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.5em;
             outline: none;
-            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+            background-color: transparent;
+            color: var(--text-primary);
         }
 
-        .search-input:focus {
-            border-color: #5dade2; /* Lighter blue on focus */
-            box-shadow: 0 0 8px rgba(93, 173, 226, 0.4); /* Softer glow */
+        @keyframes blink-cursor {
+            from, to { box-shadow: inset 2px 0 0 0 transparent; }
+            50% { box-shadow: inset 2px 0 0 0 var(--text-primary); }
+        }
+        .search-input:focus:placeholder-shown {
+            animation: blink-cursor 1s step-end infinite;
+        }
+        
+        /* Loading Dots Animation */
+        .loading-dots span {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            background-color: var(--primary-color);
+            border-radius: 50%;
+            animation: loading-bounce 1.4s infinite ease-in-out both;
+        }
+        .loading-dots .dot1 { animation-delay: -0.32s; }
+        .loading-dots .dot2 { animation-delay: -0.16s; }
+
+        @keyframes loading-bounce {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1.0); }
         }
 
         /* Quick Access Section Styles */
@@ -173,12 +223,13 @@
             display: flex;
             flex-wrap: wrap;
             justify-content: center;
-            gap: 20px; /* More space */
-            margin-bottom: 45px; /* More margin */
-            padding: 25px; /* More padding */
-            background: #eef5fc; /* Lighter background for quick access */
-            border-radius: 14px; /* More rounded corners */
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05); /* Subtle shadow */
+            gap: 20px;
+            margin-bottom: 45px;
+            padding: 25px;
+            background: var(--quick-access-bg);
+            border-radius: 14px;
+            box-shadow: 0 4px 15px var(--shadow-light);
+            transition: background-color 0.5s ease;
         }
 
         .quick-access-item {
@@ -186,80 +237,60 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            width: 90px; /* Larger size */
-            height: 90px; /* Larger size */
-            background: #ffffff;
-            border-radius: 12px; /* More rounded corners */
-            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08); /* Softer shadow */
-            transition: transform 0.25s ease, box-shadow 0.25s ease, background-color 0.25s ease;
+            width: 100px; /* Increased size for touch */
+            height: 100px; /* Increased size for touch */
+            background: var(--item-bg);
+            border-radius: 16px; 
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+            transition: transform 0.25s ease, box-shadow 0.25s ease, background-color 0.5s ease;
             cursor: pointer;
             text-align: center;
             text-decoration: none;
-            color: #333;
-            position: relative; /* For potential future animations */
-            overflow: hidden; /* Hide overflow for icon scaling */
+            color: var(--text-primary);
+            position: relative;
+            overflow: hidden;
         }
-
-        .quick-access-item:hover {
-            transform: translateY(-7px) scale(1.05); /* More pronounced lift and scale */
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15); /* Stronger shadow on hover */
-            background-color: #f0f8ff; /* Very light blue on hover */
+        .quick-access-item:active {
+             transform: scale(0.95); /* Visual feedback for touch */
+        }
+         .quick-access-item:hover {
+            background-color: var(--item-hover-bg);
         }
 
         .quick-access-icon {
-            font-size: 2.5em; /* Larger icon size */
+            font-size: 2.8em;
             margin-bottom: 8px;
-            width: 45px; /* Larger favicon size */
-            height: 45px; /* Larger favicon size */
+            width: 50px;
+            height: 50px;
             object-fit: contain;
-            transition: transform 0.25s ease;
-        }
-        .quick-access-item:hover .quick-access-icon {
-            transform: scale(1.1); /* Subtle icon zoom on hover */
         }
 
         .quick-access-title {
-            font-size: 0.85em; /* Slightly larger text */
+            font-size: 0.9em;
             font-weight: 600;
-            color: #555;
+            color: var(--text-secondary);
         }
 
+        /* Category and Bookmark Styles */
         .category-section {
             margin-bottom: 30px;
-            padding: 25px;
-            border-radius: 16px; /* More rounded corners */
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.06); /* Softer shadow */
-            transition: background-color 0.3s ease;
         }
 
         .category-section h2 {
-            font-size: 2.2em; /* Larger heading */
-            color: #2c3e50;
-            margin-bottom: 25px; /* More margin */
-            display: flex;
-            align-items: center;
-            gap: 12px; /* More space */
-            padding-bottom: 12px; /* More padding */
-            border-bottom: 1px solid rgba(0,0,0,0.08); /* Lighter border */
+            font-size: 2.2em;
+            color: var(--text-primary);
+            margin-bottom: 25px;
             cursor: pointer;
-            transition: color 0.2s ease;
+            display:flex; 
+            align-items:center;
         }
-
-        .category-section h2:hover {
-            color: #3498db; /* Blue on hover */
-        }
-
         .category-section h2::after {
             content: '▼';
             margin-left: auto;
             transition: transform 0.3s ease;
-            font-size: 0.8em; /* Smaller arrow */
-            color: #7f8c8d;
         }
-
         .category-section.open h2::after {
-            content: '▲';
-            transform: rotate(0deg);
+            transform: rotate(180deg);
         }
 
         .category-section ul {
@@ -267,343 +298,148 @@
             padding: 0;
             max-height: 0;
             overflow: hidden;
-            transition: max-height 0.6s ease-out; /* Slower, smoother transition */
+            transition: max-height 0.6s ease-out;
         }
 
         .category-section.open ul {
-            max-height: 1500px; /* Increased value to accommodate more content */
+            max-height: 2000px;
         }
-
-        .category-section ul li {
-            margin-bottom: 15px; /* More margin */
-            background: rgba(255, 255, 255, 0.85); /* Slightly less transparent */
-            padding: 15px 20px; /* More padding */
-            border-radius: 10px; /* More rounded corners */
-            transition: background-color 0.2s ease, transform 0.1s ease;
+        
+        .bookmark-item-wrapper {
+            position: relative;
+            overflow: hidden;
+            border-radius: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .bookmark-item-content {
+            background: var(--item-bg);
+            padding: 20px;
             display: flex;
             align-items: center;
-            gap: 15px; /* More space */
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04); /* Subtle shadow */
+            gap: 15px;
+            transition: transform 0.3s ease-out, background-color 0.5s ease;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+            user-select: none;
+        }
+         .bookmark-item-content.swiped {
+            transform: translateX(-80px);
         }
 
-        .category-section ul li:hover {
-            background-color: rgba(255, 255, 255, 0.98); /* Almost opaque on hover */
-            transform: translateX(5px); /* Subtle slide effect */
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08); /* Slightly stronger shadow */
+        .bookmark-item-content:active {
+            background-color: var(--item-hover-bg);
         }
-
-        .category-section ul li .bookmark-link-content {
-            display: flex;
+        
+        .bookmark-details {
+             display: flex;
             flex-direction: column;
             flex-grow: 1;
         }
 
-        .category-section ul li a {
+        .bookmark-details a {
             text-decoration: none;
-            color: #34495e;
-            font-size: 1.2em; /* Larger font */
+            color: var(--text-primary);
+            font-size: 1.2em;
             font-weight: 600;
-            display: block;
-            word-wrap: break-word;
-            transition: color 0.2s ease;
         }
 
-        .category-section ul li a:hover {
-            color: #2980b9;
-            text-decoration: underline;
+        .bookmark-details .bookmark-description {
+            font-size: 0.95em;
+            color: var(--text-secondary);
+            margin-top: 6px;
+        }
+        
+        .swipe-delete-button {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 80px;
+            height: 100%;
+            background-color: var(--delete-color);
+            color: white;
+            border: none;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.5em;
+            cursor: pointer;
         }
 
-        .category-section ul li .bookmark-description {
-            font-size: 0.95em; /* Slightly larger */
-            color: #7f8c8d;
-            margin-top: 6px; /* More margin */
-            line-height: 1.4;
-        }
-
-        /* Favicon in category list */
         .category-favicon {
-            width: 28px; /* Larger favicon */
-            height: 28px; /* Larger favicon */
+            width: 28px;
+            height: 28px;
             object-fit: contain;
             flex-shrink: 0;
         }
-
-        /* No results message */
-        .no-results-message {
-            text-align: center;
-            padding: 40px; /* More padding */
-            font-size: 1.3em; /* Larger font */
-            color: #7f8c8d;
-            background: #f8f9fa;
-            border-radius: 12px;
-            margin-top: 40px; /* More margin */
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
-        }
-
-        .no-results-message a {
-            color: #2980b9;
-            text-decoration: none;
-            font-weight: 700; /* Bolder */
-            transition: color 0.2s ease;
-        }
-
-        .no-results-message a:hover {
-            text-decoration: underline;
-            color: #3498db;
-        }
-
-        /* Bounce effect for search results */
-        @keyframes bounce-in {
-            0% { transform: scale(0.9); opacity: 0; }
-            50% { transform: scale(1.03); opacity: 1; } /* Slightly less bounce */
-            100% { transform: scale(1); }
-        }
-
-        .category-section ul li.search-result-bounce {
-            animation: bounce-in 0.4s ease-out; /* Slightly faster bounce */
-        }
-
-        /* Summary Button Styles */
-        .summary-button {
-            background-color: #3498db; /* Blue button */
-            color: white;
-            border: none;
+        
+        /* Custom Context Menu */
+        .custom-context-menu {
+            position: absolute;
+            z-index: 1000;
+            background-color: var(--item-bg);
+            border: 1px solid #ccc;
             border-radius: 8px;
-            padding: 8px 12px;
-            font-size: 0.85em;
+            padding: 5px 0;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.15);
+            display: none;
+        }
+        .custom-context-menu li {
+            padding: 8px 15px;
             cursor: pointer;
-            transition: background-color 0.2s ease, transform 0.1s ease;
-            margin-left: auto; /* Push to the right */
             display: flex;
             align-items: center;
-            gap: 5px;
-            white-space: nowrap; /* Prevent text wrapping */
+            gap: 8px;
+            font-size: 0.9em;
+            color: var(--text-primary);
+        }
+        .custom-context-menu li:hover {
+            background-color: var(--item-hover-bg);
+        }
+        .custom-context-menu li .delete-icon {
+            color: var(--delete-color);
         }
 
-        .summary-button:hover {
-            background-color: #2980b9;
-            transform: translateY(-1px);
-        }
-
-        .summary-button:active {
-            transform: translateY(0);
-        }
-
-        .summary-button:disabled {
-            background-color: #cccccc;
-            cursor: not-allowed;
+        .no-results-message {
+            text-align: center;
+            padding: 40px;
+            font-size: 1.3em;
+            color: var(--text-secondary);
+            background: var(--quick-access-bg);
+            border-radius: 12px;
+            margin-top: 40px;
+            box-shadow: 0 4px 15px var(--shadow-light);
         }
 
         /* Modal Styles */
         .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.6);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 10000;
-            opacity: 0;
-            transition: opacity 0.3s ease-out;
-            pointer-events: none; /* Initially no pointer events */
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0, 0, 0, 0.6); display: flex; justify-content: center; align-items: center;
+            z-index: 10000; opacity: 0; transition: opacity 0.3s ease-out; pointer-events: none;
         }
-
-        .modal-overlay.open {
-            opacity: 1;
-            pointer-events: auto; /* Enable pointer events when open */
-        }
-
+        .modal-overlay.open { opacity: 1; pointer-events: auto; }
         .modal-content {
-            background-color: #ffffff;
-            padding: 30px;
-            border-radius: 16px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-            max-width: 600px;
-            width: 90%;
-            transform: translateY(-20px);
-            opacity: 0;
-            transition: transform 0.3s ease-out, opacity 0.3s ease-out;
+            background-color: var(--container-bg); padding: 30px; border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2); max-width: 600px; width: 90%;
+            transform: translateY(-20px); opacity: 0; transition: transform 0.3s ease-out, opacity 0.3s ease-out;
             position: relative;
         }
-
-        .modal-overlay.open .modal-content {
-            transform: translateY(0);
-            opacity: 1;
-        }
-
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            padding-bottom: 10px;
-            border-bottom: 1px solid #eee;
-        }
-
-        .modal-header h3 {
-            font-size: 1.8em;
-            color: #2c3e50;
-            margin: 0;
-        }
-
-        .modal-close-button {
-            background: none;
-            border: none;
-            font-size: 1.8em;
-            color: #7f8c8d;
-            cursor: pointer;
-            transition: color 0.2s ease;
-        }
-
-        .modal-close-button:hover {
-            color: #333;
-        }
-
-        .modal-body {
-            font-size: 1.1em;
-            color: #555;
-            line-height: 1.6;
-            max-height: 300px; /* Limit height for scroll */
-            overflow-y: auto; /* Enable scrolling */
-            padding-right: 10px; /* Space for scrollbar */
-        }
-
-        .modal-body p {
-            margin-bottom: 10px;
-        }
-
-        .modal-body.loading {
-            text-align: center;
-            font-style: italic;
-            color: #888;
-        }
-
-        .modal-body.error {
-            color: #e74c3c;
-            font-weight: 600;
-        }
-
-        /* Responsive adjustments */
-        @media (max-width: 768px) {
-            body {
-                padding: 15px;
-            }
-            .container {
-                padding: 25px;
-                margin: 15px auto;
-            }
-            .header h1 {
-                font-size: 2.5em;
-            }
-            .header p {
-                font-size: 1em;
-            }
-            .quick-access-item {
-                width: 80px;
-                height: 80px;
-            }
-            .quick-access-icon {
-                font-size: 2em;
-                width: 40px;
-                height: 40px;
-            }
-            .quick-access-title {
-                font-size: 0.75em;
-            }
-            .category-section h2 {
-                font-size: 2em;
-            }
-            .category-section ul li {
-                padding: 12px 15px;
-                gap: 10px;
-                flex-wrap: wrap; /* Allow buttons to wrap */
-            }
-            .category-section ul li a {
-                font-size: 1.05em;
-            }
-            .category-favicon {
-                width: 24px;
-                height: 24px;
-            }
-            .no-results-message {
-                padding: 25px;
-                font-size: 1.1em;
-            }
-            .modal-content {
-                padding: 20px;
-                width: 95%;
-            }
-            .modal-header h3 {
-                font-size: 1.5em;
-            }
-            .modal-close-button {
-                font-size: 1.5em;
-            }
-            .modal-body {
-                font-size: 1em;
-            }
-            .summary-button {
-                margin-left: 0; /* Remove left margin for better wrapping */
-                margin-top: 10px; /* Add top margin if wrapped */
-                width: 100%; /* Make buttons full width when wrapped */
-                justify-content: center; /* Center content in full-width buttons */
-            }
-        }
-
-        @media (max-width: 480px) {
-            body {
-                padding: 10px;
-            }
-            .container {
-                padding: 20px;
-                margin: 10px auto;
-            }
-            .header h1 {
-                font-size: 2em;
-            }
-            .header p {
-                font-size: 0.9em;
-            }
-            .quick-access-item {
-                width: 70px;
-                height: 70px;
-            }
-            .quick-access-icon {
-                font-size: 1.8em;
-                width: 35px;
-                height: 35px;
-            }
-            .quick-access-title {
-                font-size: 0.65em;
-            }
-            .category-section h2 {
-                font-size: 1.6em;
-            }
-            .category-section ul li {
-                padding: 10px 12px;
-            }
-            .category-section ul li a {
-                font-size: 0.95em;
-            }
-            .category-favicon {
-                width: 20px;
-                height: 20px;
-            }
-            .no-results-message {
-                padding: 20px;
-                font-size: 1em;
-            }
-            .summary-button {
-                padding: 6px 10px;
-                font-size: 0.75em;
-            }
+        .modal-overlay.open .modal-content { transform: translateY(0); opacity: 1; }
+        .modal-header h3 { font-size: 1.8em; color: var(--text-primary); margin: 0; }
+        .modal-close-button { background: none; border: none; font-size: 1.8em; color: var(--text-secondary); cursor: pointer; transition: color 0.2s ease; }
+        .modal-close-button:hover { color: #333; }
+        .modal-body { color: var(--text-primary); }
+        .form-group label { color: var(--text-secondary); }
+        .form-group input, .form-group textarea {
+            background-color: var(--item-bg);
+            color: var(--text-primary);
+            border: 1px solid var(--text-secondary);
         }
     </style>
 </head>
 <body>
+    <div class="theme-button-container">
+        <button id="theme-button" class="theme-button" title="Zmień motyw">🎨</button>
+    </div>
 
     <div id="splash-screen" class="splash-screen">
         <div class="splash-message"></div>
@@ -613,52 +449,70 @@
         <div class="container">
             <div class="header">
                 <h1 id="greeting-header"></h1>
+                <div class="search-bar-container">
+                    <input type="text" id="search-input" class="search-input" placeholder="Wpisz szukaną frazę lub naciśnij Enter, by pytać Google...">
+                    <div id="search-loader" class="loading-dots" style="display: none;">
+                        <span class="dot1"></span>
+                        <span class="dot2"></span>
+                        <span class="dot3"></span>
+                    </div>
+                </div>
                 <div class="weather-widget-container" style="margin-bottom: 20px;">
                     <a class="weatherwidget-io" href="https://forecast7.com/pl/52d3421d24/wolomin/" data-label_1="WOŁOMIN" data-icons="Climacons Animated" data-mode="Forecast" data-days="3" data-theme="weather_one">WOŁOMIN</a>
                 </div>
-                <p>Prosty i przejrzysty menedżer Twoich ulubionych stron.</p>
-            </div>
-
-            <div class="search-bar-container">
-                <input type="text" id="search-input" placeholder="Wyszukaj zakładki...">
             </div>
 
             <div class="quick-access-section" id="quick-access-section"></div>
-
             <div id="bookmark-categories-section"></div>
-
             <div id="no-results-message" class="no-results-message" style="display: none;"></div>
         </div>
     </div>
-
-    <div id="summary-modal-overlay" class="modal-overlay">
+    
+    <!-- Add/Edit Bookmark Modal -->
+    <div id="add-bookmark-modal" class="modal-overlay">
         <div class="modal-content">
             <div class="modal-header">
-                <h3 id="summary-modal-title"></h3>
-                <button id="summary-modal-close-button" class="modal-close-button">×</button>
+                <h3 id="form-modal-title">Dodaj nową zakładkę</h3>
+                <button id="add-modal-close-button" class="modal-close-button">×</button>
             </div>
-            <div id="summary-modal-body" class="modal-body"></div>
+            <div class="modal-body">
+                 <form id="add-bookmark-form">
+                    <div class="form-group">
+                        <label for="bookmark-title">Tytuł</label>
+                        <input type="text" id="bookmark-title" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="bookmark-url">URL</label>
+                        <input type="url" id="bookmark-url" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="bookmark-folder">Kategoria (istniejąca lub nowa)</label>
+                        <input type="text" id="bookmark-folder" list="category-suggestions" required>
+                        <datalist id="category-suggestions"></datalist>
+                    </div>
+                     <div class="form-group">
+                        <label for="bookmark-description">Opis (opcjonalnie)</label>
+                        <textarea id="bookmark-description"></textarea>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="submit" class="form-submit-btn">Zapisz</button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
+    
+    <!-- Custom Context Menu for deletion -->
+    <div id="custom-context-menu" class="custom-context-menu">
+        <ul>
+            <li id="delete-context-btn"><span class="delete-icon">🗑️</span> Usuń</li>
+        </ul>
+    </div>
+
 
     <script>
-        // Helper function to get favicon URL
-        function getFaviconUrl(url) {
-            try {
-                if (url && url !== '#') {
-                    const domain = new URL(url).hostname;
-                    return `https://www.google.com/s2/favicons?domain=${domain}&sz=64`;
-                }
-                return null;
-            } catch (error) {
-                console.error("Invalid URL for favicon:", url, error);
-                return null;
-            }
-        }
-
-        // Bookmark Data (simplified for direct use, assuming it's parsed from HTML file)
-        const allBookmarksData = [
-            { folder: "Edukacja", title: "Ocena Efektywności Pomocy Psychologiczno-Pedagogicznej", url: "https://pedagogika-specjalna.edu.pl/warsztat-pracy/ocena-efektywnosci-udzielanej-pomocy-psychologiczno-pedagogicznej/", description: "Artykuł dotyczący oceny efektywności pomocy psychologiczno-pedagogicznej." },
+        const initialBookmarks = [
+             { folder: "Edukacja", title: "Ocena Efektywności Pomocy Psychologiczno-Pedagogicznej", url: "https://pedagogika-specjalna.edu.pl/warsztat-pracy/ocena-efektywnosci-udzielanej-pomocy-psychologiczno-pedagogicznej/", description: "Artykuł dotyczący oceny efektywności pomocy psychologiczno-pedagogicznej." },
             { folder: "Edukacja", title: "Podstawa Programowa Kształcenia Ogólnego (Szkoły Podstawowe)", url: "https://www.gov.pl/web/edukacja/podstawa-programowa-ksztalcenia-ogolnego-dla-szkol-podstawowych", description: "Oficjalna strona z podstawą programową kształcenia ogólnego dla szkół podstawowych." },
             { folder: "Rozrywka", title: "YouTube - Platforma Wideo", url: "https://www.youtube.com/", description: "Platforma wideo YouTube." },
             { folder: "Hobby", title: "Blog Tinas Blumenwiese (Rękodzieło)", url: "https://tinasblumenwiese.com/", description: "Blog o rękodziele i kreatywności." },
@@ -740,24 +594,8 @@
             { folder: "Historia", title: "Niccolo Paganini (PDF)", url: "https://www.sm1st.wroclaw.pl/wp-content/uploads/2020/05/1.Niccolo-Paganini-180-rocznica-s%CC%81mierci.pdf", description: "Plik PDF o Niccolo Paganinim." },
             { folder: "Rozrywka", title: "Kultowe Pary Filmowe (Ofeminin.pl)", url: "https://www.ofeminin.pl/milosc/zwiazek/12-kultowych-par-z-najwiekszych-kinowych-romansow/hyyxvms", description: "12 kultowych par z największych kinowych romansów." }
         ];
-
-        // Data for quick access section
-        const quickAccessLinks = [
-            { title: "Onet Poczta", url: "https://poczta.onet.pl/" },
-            { title: "MS Teams", url: "https://teams.microsoft.com/" },
-            { title: "YouTube", url: "https://www.youtube.com/" },
-            { title: "Allegro", url: "https://allegro.pl/" },
-            { title: "Letyshops", url: "https://letyshops.com/pl/" },
-            { title: "AliExpress", url: "https://www.aliexpress.com/" },
-            { title: "Instagram", url: "https://www.instagram.com/" },
-            { title: "Messenger", url: "https://www.messenger.com/" },
-            { title: "WhatsApp", url: "https://web.whatsapp.com/" },
-            { title: "Dodaj", url: "#", icon: "➕" },
-        ];
-
-        // List of personalized greetings in five languages with Polish translation and emoji
+        const quickAccessLinks = [ { title: "Onet Poczta", url: "https://poczta.onet.pl/" }, { title: "MS Teams", url: "https://teams.microsoft.com/" }, { title: "YouTube", url: "https://www.youtube.com/" }, { title: "Allegro", url: "https://allegro.pl/" }, { title: "Letyshops", url: "https://letyshops.com/pl/" }, { title: "AliExpress", url: "https://www.aliexpress.com/" }, { title: "Instagram", url: "https://www.instagram.com/" }, { title: "Messenger", url: "https://www.messenger.com/" }, { title: "WhatsApp", url: "https://web.whatsapp.com/" }, { title: "Dodaj", url: "#", icon: "➕" }, ];
         const allGreetingsForHeader = [
-            // Polish greetings
             { emoji: "🌿", text: "Cześć Viola! Jak się mają Twoje pelargonie?", languageCode: "pl", polishTranslation: "Cześć Viola! Jak się mają Twoje pelargonie?" },
             { emoji: "☀️", text: "Witaj w słoneczny dzień! Gotowa na ogród?", languageCode: "pl", polishTranslation: "Witaj w słoneczny dzień! Gotowa na ogród?" },
             { emoji: "🧵", text: "Hej Viola! Dziergasz dziś coś pięknego?", languageCode: "pl", polishTranslation: "Hej Viola! Dziergasz dziś coś pięknego?" },
@@ -778,8 +616,6 @@
             { emoji: "🌾", text: "Viola, gotowa na dzień w ogrodzie?", languageCode: "pl", polishTranslation: "Viola, gotowa na dzień w ogrodzie?" },
             { emoji: "👑🪴", text: "Witaj, królowo działki!", languageCode: "pl", polishTranslation: "Witaj, królowo działki!" },
             { emoji: "☕", text: "Cześć! Zasłużona przerwa?", languageCode: "pl", polishTranslation: "Cześć! Zasłużona przerwa?" },
-
-            // Italian greetings
             { emoji: "🌼", text: "Ciao Viola! Come stanno i tuoi fiori oggi?", languageCode: "it", polishTranslation: "Cześć Viola! Jak się mają Twoje kwiaty dzisiaj?" },
             { emoji: "☕", text: "Buongiorno! Hai già bevuto il caffè sul terrazzo?", languageCode: "it", polishTranslation: "Dzień dobry! Piłaś już kawę na tarasie?" },
             { emoji: "🌞", text: "Viola, che bella giornata per il giardinaggio!", languageCode: "it", polishTranslation: "Viola, co za piękny dzień na ogrodnictwo!" },
@@ -794,14 +630,12 @@
             { emoji: "🧵", text: "Hey! Dov’è il tuo uncinetto oggi?", languageCode: "it", polishTranslation: "Hej! Gdzie dziś Twój szydełko?" },
             { emoji: "👑", text: "Ciao Viola, regina del giardino!", languageCode: "it", polishTranslation: "Cześć Viola, królowo ogrodu!" },
             { emoji: "🌸", text: "Pronta per una passeggiata tra i tuoi fiori?", languageCode: "it", polishTranslation: "Gotowa na spacer wśród Twoich kwiatów?" },
-            { emoji: "🌤️", text: "Che ne dici di una pausa sotto il sole?", languageCode: "it", polishTranslation: "Co powiesz na przerwę w słońcu?" },
+            { emoji: "🌤️", text: "Che ne dici di una pausa sotto el sole?", languageCode: "it", polishTranslation: "Co powiesz na przerwę w słońcu?" },
             { emoji: "🌱", text: "Ciao carissima! Oggi tutto cresce!", languageCode: "it", polishTranslation: "Cześć najdroższa! Dziś wszystko rośnie!" },
             { emoji: "🌿🤗", text: "Un abbraccio verde per te!", languageCode: "it", polishTranslation: "Zielony uścisk dla Ciebie!" },
             { emoji: "🎨", text: "Viola, tempo per il tuo angolo creativo?", languageCode: "it", polishTranslation: "Viola, czas na Twój kreatywny kącik?" },
             { emoji: "🌺", text: "Buondì! Hai già annaffiato i gerani?", languageCode: "it", polishTranslation: "Dzień dobry! Podlałaś już pelargonie?" },
             { emoji: "🛋️", text: "Ciao! Una giornata serena ti aspetta", languageCode: "it", polishTranslation: "Cześć! Czeka Cię spokojny dzień" },
-
-            // Spanish greetings
             { emoji: "🌞", text: "¡Hola Viola! ¿Cómo va tu jardín hoy?", languageCode: "es", polishTranslation: "Cześć Viola! Jak tam Twój ogród dzisiaj?" },
             { emoji: "👑🪴", text: "¡Buenos días, reina de la huerta!", languageCode: "es", polishTranslation: "Dzień dobry, królowo warzywnika!" },
             { emoji: "🧶", text: "¡Viola! ¿Ya tejiste algo nuevo?", languageCode: "es", polishTranslation: "Viola! Szydełkowałaś już coś nowego?" },
@@ -821,9 +655,7 @@
             { emoji: "🌾", text: "¡Hola hola! Tiempo para cosechar", languageCode: "es", polishTranslation: "Cześć cześć! Czas na zbiory" },
             { emoji: "🌿", text: "¡Saluditos! Tu jardín huele a primavera.", languageCode: "es", polishTranslation: "Pozdrowienia! Twój ogród pachnie wiosną." },
             { emoji: "🌱", text: "¡Qué día perfecto para plantar algo nuevo!", languageCode: "es", polishTranslation: "Co za idealny dzień na posadzenie czegoś nowego!" },
-            { emoji: "😊💐", text: "¡Viola, una sonrisa con olor a lavanda!", languageCode: "es", polishTranslation: "Viola, uśmiech pachnący lawendą!" },
-
-            // English greetings
+            { emoji: "😊💐", text: "¡Viola, una sonrisa con olor a lavanda!", languageCode: "es", polishTranslation: "Viola, uśmiech pachnący lawandą!" },
             { emoji: "🌸", text: "Hey Viola! How’s your garden today?", languageCode: "en", polishTranslation: "Hej Viola! Jak tam Twój ogród dzisiaj?" },
             { emoji: "☀️", text: "Good morning, sunshine!", languageCode: "en", polishTranslation: "Dzień dobry, słoneczko!" },
             { emoji: "🛋️", text: "Viola, ready for some relaxing time?", languageCode: "en", polishTranslation: "Viola, gotowa na trochę relaksu?" },
@@ -844,10 +676,8 @@
             { emoji: "🎨🧵", text: "Feeling crafty today?", languageCode: "en", polishTranslation: "Masz dziś ochotę na rękodzieło?" },
             { emoji: "🌤️", text: "Lovely weather for sowing seeds!", languageCode: "en", polishTranslation: "Urocza pogoda na sianie nasion!" },
             { emoji: "🌸", text: "Hello friend! Time to relax and create.", languageCode: "en", polishTranslation: "Witaj przyjaciółko! Czas na relaks i tworzenie." },
-
-            // Russian greetings
             { emoji: "🌷", text: "Привет, Виола! Как поживает твой сад?", languageCode: "ru", polishTranslation: "Cześć, Viola! Jak tam Twój ogród?" },
-            { emoji: "🌞", text: "Доброе утро! Сегодня идеальная погода.", languageCode: "ru", polishTranslation: "Dzień dobry! Dziś idealna pogoda." },
+            { emoji: "🌞", text: "Доброе утро! Сегодня идеальная погоoda.", languageCode: "ru", polishTranslation: "Dzień dobry! Dziś idealna pogoda." },
             { emoji: "🛋️", text: "Виола, пора отдохнуть!", languageCode: "ru", polishTranslation: "Viola, czas na odpoczynek!" },
             { emoji: "🧶", text: "Приветики! Вяжешь что-то новенькое?", languageCode: "ru", polishTranslation: "Cześć! Robisz na drutach coś nowego?" },
             { emoji: "🪴", text: "Здравствуй, хозяйка дачи!", languageCode: "ru", polishTranslation: "Witaj, gospodyni daczy!" },
@@ -867,114 +697,77 @@
             { emoji: "🤗", text: "Виола, сделай паузу – ты это заслужила", languageCode: "ru", polishTranslation: "Viola, zrób sobie przerwę – zasłużyłaś na to" },
             { emoji: "🌿👑", text: "Добро пожаловать в своё зелёное королевство!", languageCode: "ru", polishTranslation: "Witaj w swoim zielonym królestwie!" }
         ];
-
-        const splashBackgrounds = [
-            'linear-gradient(135deg, #a8dadc, #457b9d)', // Blue-Cyan
-            'linear-gradient(135deg, #f8edeb, #fec89a)', // Peach-Orange
-            'linear-gradient(135deg, #e0f7fa, #80deea)', // Light Blue-Turquoise
-            'linear-gradient(135deg, #e8f5e9, #a5d6a7)', // Light Green-Green
-            'linear-gradient(135deg, #f3e5f5, #ce93d8)', // Light Purple-Purple
-            'linear-gradient(135deg, #fff3e0, #ffcc80)', // Light Orange-Deep Orange
-            'linear-gradient(135deg, #ffebee, #ef9a9a)', // Light Red-Red
-            'linear-gradient(135deg, #f0f4c3, #cddc39)', // Light Lime-Lime
-            'linear-gradient(135deg, #D4E2F0, #A7C9ED)', // Soft Blue
-            'linear-gradient(135deg, #F0E6D4, #EDC9A7)', // Warm Peach
-            'linear-gradient(135deg, #E0F0E2, #A7EDC9)', // Mint Green
-            'linear-gradient(135deg, #F0D4E6, #EDC9A7)', // Lavender Pink
-            'linear-gradient(135deg, #E2F0D4, #C9EDC9)', // Pale Green
-            'linear-gradient(135deg, #D4EAF0, #A7EDC9)', // Sky Blue
+        const splashBackgrounds = [ 'linear-gradient(135deg, #a8dadc, #457b9d)', 'linear-gradient(135deg, #f8edeb, #fec89a)', ];
+        const categoryColors = { "Edukacja": "#E0F7FA", "Rozrywka": "#FFF3E0", "Hobby": "#E8F5F5", "Poczta": "#E3F2FD", "Zakupy": "#FCE4EC", "Zdrowie": "#F3E5F5", "Finanse": "#FFFDE7", "Administracja": "#EFEBE9", "Filmy i TV": "#FFEBEE", "Dzienniki Szkolne": "#F0F4C3", "Narzędzia Online": "#F5F5F5", "Język Hiszpański": "#E0F2F7", "Geografia": "#E6EE9C", "Język Polski": "#FFE0B2", "Filozofia": "#D1C4E9", "Podróże": "#C8E6C9", "Rozwój Osobisty": "#B2EBF2", "Historia": "#FBE9E7", };
+        
+        const themes = [
+             { name: 'LightHighContrast', values: { '--primary-color': '#0053b3', '--primary-color-dark': '#00408c', '--background-gradient-start': '#ffffff', '--background-gradient-end': '#f0f2f5', '--container-bg': '#ffffff', '--text-primary': '#000000', '--text-secondary': '#555555', '--quick-access-bg': '#e9ecef', '--item-bg': '#f8f9fa', '--item-hover-bg': '#e9ecef', '--delete-color': '#d90429' }},
+            { name: 'Default', values: { '--primary-color': '#3498db', '--primary-color-dark': '#2980b9', '--background-gradient-start': '#e0eafc', '--background-gradient-end': '#cfdef3', '--container-bg': '#ffffff', '--text-primary': '#2c3e50', '--text-secondary': '#7f8c8d', '--quick-access-bg': '#eef5fc', '--item-bg': '#ffffff', '--item-hover-bg': '#f0f0f0'}},
+            { name: 'Ocean', values: { '--primary-color': '#1abc9c', '--primary-color-dark': '#16a085', '--background-gradient-start': '#E0F2F1', '--background-gradient-end': '#B2DFDB', '--container-bg': '#ffffff', '--text-primary': '#004D40', '--text-secondary': '#00796B', '--quick-access-bg': '#E0F2F1', '--item-bg': '#ffffff', '--item-hover-bg': '#f0f0f0'}},
+            { name: 'Sunset', values: { '--primary-color': '#e74c3c', '--primary-color-dark': '#c0392b', '--background-gradient-start': '#FAD7A1', '--background-gradient-end': '#E9A8A6', '--container-bg': '#fff8f2', '--text-primary': '#5D4037', '--text-secondary': '#8D6E63', '--quick-access-bg': '#FBE9E7', '--item-bg': '#ffffff', '--item-hover-bg': '#f0f0f0'}},
+            { name: 'Forest', values: { '--primary-color': '#27ae60', '--primary-color-dark': '#229954', '--background-gradient-start': '#E8F5E9', '--background-gradient-end': '#C8E6C9', '--container-bg': '#f9fcf9', '--text-primary': '#1B5E20', '--text-secondary': '#388E3C', '--quick-access-bg': '#E8F5E9', '--item-bg': '#ffffff', '--item-hover-bg': '#f0f0f0'}},
+            { name: 'Lavender', values: { '--primary-color': '#8e44ad', '--primary-color-dark': '#7d3c98', '--background-gradient-start': '#F3E5F5', '--background-gradient-end': '#E1BEE7', '--container-bg': '#ffffff', '--text-primary': '#4A148C', '--text-secondary': '#6A1B9A', '--quick-access-bg': '#F3E5F5', '--item-bg': '#ffffff', '--item-hover-bg': '#f0f0f0'}},
+            { name: 'Graphite', values: { '--primary-color': '#f39c12', '--primary-color-dark': '#f1c40f', '--background-gradient-start': '#424242', '--background-gradient-end': '#212121', '--container-bg': '#303030', '--text-primary': '#ffffff', '--text-secondary': '#BDBDBD', '--quick-access-bg': '#424242', '--item-bg': '#424242', '--item-hover-bg': '#555555'}},
+            { name: 'Mint', values: { '--primary-color': '#00A896', '--primary-color-dark': '#007A6E', '--background-gradient-start': '#d4f2ea', '--background-gradient-end': '#a6e4d5', '--container-bg': '#f5fffd', '--text-primary': '#023535', '--text-secondary': '#015958', '--quick-access-bg': '#e0f6f0', '--item-bg': '#ffffff', '--item-hover-bg': '#f0f0f0'}},
+            { name: 'Cherry Blossom', values: { '--primary-color': '#ff7b9b', '--primary-color-dark': '#ff5c8a', '--background-gradient-start': '#fde2e4', '--background-gradient-end': '#fad2e1', '--container-bg': '#fff0f3', '--text-primary': '#582b47', '--text-secondary': '#8c4f69', '--quick-access-bg': '#fde2e4', '--item-bg': '#ffffff', '--item-hover-bg': '#f0f0f0'}},
+            { name: 'Sandstone', values: { '--primary-color': '#f28444', '--primary-color-dark': '#d46a2a', '--background-gradient-start': '#fdead7', '--background-gradient-end': '#f7d6b7', '--container-bg': '#fff8f0', '--text-primary': '#613819', '--text-secondary': '#915426', '--quick-access-bg': '#fdead7', '--item-bg': '#ffffff', '--item-hover-bg': '#f0f0f0'}},
+            { name: 'Midnight', values: { '--primary-color': '#4e54c8', '--primary-color-dark': '#3a3f99', '--background-gradient-start': '#2c3e50', '--background-gradient-end': '#1b2838', '--container-bg': '#273444', '--text-primary': '#ffffff', '--text-secondary': '#bdc3c7', '--quick-access-bg': '#34495e', '--item-bg': '#424242', '--item-hover-bg': '#555555'}},
         ];
-
-        const categoryColors = {
-            "Edukacja": "#E0F7FA", // Light Cyan
-            "Rozrywka": "#FFF3E0", // Light Orange
-            "Hobby": "#E8F5F5",    // Light Green
-            "Poczta": "#E3F2FD",   // Light Blue
-            "Zakupy": "#FCE4EC",   // Light Pink
-            "Zdrowie": "#F3E5F5",  // Light Purple
-            "Finanse": "#FFFDE7",  // Light Yellow
-            "Administracja": "#EFEBE9", // Light Brown
-            "Filmy i TV": "#FFEBEE", // Lighter Red
-            "Dzienniki Szkolne": "#F0F4C3", // Light Lime
-            "Narzędzia Online": "#F5F5F5", // Light Grey
-            "Język Hiszpański": "#E0F2F7", // Lighter Blue
-            "Geografia": "#E6EE9C", // Lime Green
-            "Język Polski": "#FFE0B2", // Orange
-            "Filozofia": "#D1C4E9", // Purple
-            "Podróże": "#C8E6C9", // Green
-            "Rozwój Osobisty": "#B2EBF2", // Cyan
-            "Historia": "#FBE9E7", // Peach
-        };
-
+        let currentThemeIndex = 0;
+        let allBookmarksData = [];
         let groupedBookmarks = {};
         let openCategories = [];
-        let summaryModalState = {
-            isOpen: false,
-            title: '',
-            summary: '',
-            loading: false,
-            error: null,
-        };
 
-        // Function to get favicon URL
+        // --- LOCAL STORAGE FUNCTIONS ---
+        function loadBookmarks() {
+            const storedUserBookmarks = localStorage.getItem('userBookmarks');
+            const storedDeletedInitial = localStorage.getItem('deletedInitialBookmarks');
+            
+            const userBookmarks = storedUserBookmarks ? JSON.parse(storedUserBookmarks) : [];
+            const deletedInitialUrls = storedDeletedInitial ? JSON.parse(storedDeletedInitial) : [];
+
+            const activeInitialBookmarks = initialBookmarks.filter(
+                b => !deletedInitialUrls.includes(b.url)
+            );
+
+            allBookmarksData = [...activeInitialBookmarks, ...userBookmarks];
+        }
+
+        function saveBookmarks() {
+            const userBookmarks = allBookmarksData.filter(b => !initialBookmarks.some(ib => ib.url === b.url && ib.title === b.title));
+            localStorage.setItem('userBookmarks', JSON.stringify(userBookmarks));
+        }
+        
         function getFaviconUrl(url) {
-            try {
+             try {
                 if (url && url !== '#') {
                     const domain = new URL(url).hostname;
                     return `https://www.google.com/s2/favicons?domain=${domain}&sz=64`;
                 }
-                return null;
+                return "https://placehold.co/64x64/cccccc/000000?text=?";
             } catch (error) {
-                console.error("Invalid URL for favicon:", url, error);
-                return null;
+                return "https://placehold.co/64x64/cccccc/000000?text=?";
             }
         }
-
-        /**
-         * Selects a random greeting from allGreetingsForHeader.
-         * @returns {object} An object containing the formatted greeting text for display,
-         * the text to be translated (original foreign phrase), and
-         * its Polish translation to be copied.
-         */
-        function getDynamicGreeting() {
-            const randomGreetingIndex = Math.floor(Math.random() * allGreetingsForHeader.length);
-            const selectedGreeting = allGreetingsForHeader[randomGreetingIndex];
-
-            // Display only the emoji and the original text of the greeting
-            const displayGreetingText = `${selectedGreeting.emoji} ${selectedGreeting.text}`;
-            // The original text to send to Google Translate
-            const textToTranslate = selectedGreeting.text;
-            // The Polish translation to copy to clipboard
-            const polishTranslationToCopy = selectedGreeting.polishTranslation;
-
-            return {
-                displayGreeting: displayGreetingText,
-                textToTranslate: textToTranslate,
-                polishTranslationToCopy: polishTranslationToCopy
-            };
-        }
-
-        // Function to group bookmarks by folder
+        
         function groupBookmarksByFolder(bookmarks) {
-            const grouped = {};
-            bookmarks.forEach(bookmark => {
-                const folderName = bookmark.folder;
-                if (!grouped[folderName]) {
-                    grouped[folderName] = [];
-                }
-                grouped[folderName].push(bookmark);
-            });
-            return grouped;
+            return bookmarks.reduce((acc, bookmark) => {
+                const folderName = bookmark.folder || 'Inne';
+                if (!acc[folderName]) acc[folderName] = [];
+                acc[folderName].push(bookmark);
+                return acc;
+            }, {});
         }
 
-        // Function to render quick access links
         function renderQuickAccessLinks() {
             const quickAccessSection = document.getElementById('quick-access-section');
-            quickAccessSection.innerHTML = ''; // Clear previous content
-
-            quickAccessLinks.forEach((link, index) => {
+            quickAccessSection.innerHTML = '';
+            quickAccessLinks.forEach(link => {
                 const anchor = document.createElement('a');
                 anchor.href = link.url;
+                if(link.icon) {
+                    anchor.id = "add-bookmark-btn";
+                }
                 anchor.target = "_blank";
                 anchor.rel = "noopener noreferrer";
                 anchor.className = "quick-access-item";
@@ -986,7 +779,7 @@
                     anchor.appendChild(iconSpan);
                 } else {
                     const img = document.createElement('img');
-                    img.src = getFaviconUrl(link.url) || "https://placehold.co/40x40/cccccc/000000?text=?";
+                    img.src = getFaviconUrl(link.url);
                     img.alt = link.title;
                     img.className = "quick-access-icon";
                     img.onerror = function() { this.onerror=null; this.src="https://placehold.co/40x40/cccccc/000000?text=?"; };
@@ -1000,289 +793,387 @@
 
                 quickAccessSection.appendChild(anchor);
             });
-        }
-
-        // Function to render bookmark categories
-        function renderBookmarkCategories(filteredBookmarks) {
-            const categoriesSection = document.getElementById('bookmark-categories-section');
-            categoriesSection.innerHTML = ''; // Clear previous content
-            const searchInput = document.getElementById('search-input');
-            const searchTerm = searchInput.value.toLowerCase();
-            const noResultsMessage = document.getElementById('no-results-message');
-
-            if (Object.keys(filteredBookmarks).length === 0 && searchTerm) {
-                noResultsMessage.style.display = 'block';
-                noResultsMessage.innerHTML = `Brak wyników dla "${searchTerm}". <a href="https://www.google.com/search?q=${encodeURIComponent(searchTerm)}" target="_blank" rel="noopener noreferrer">Zapytaj Google :)</a>`;
-                return;
-            } else {
-                noResultsMessage.style.display = 'none';
+            const addBtn = document.getElementById('add-bookmark-btn');
+            if (addBtn) {
+                 addBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    openAddModal();
+                });
             }
+        }
+        
+        function renderBookmarkCategories() {
+            const categoriesSection = document.getElementById('bookmark-categories-section');
+            categoriesSection.innerHTML = '';
 
-            for (const folderName in filteredBookmarks) {
+            const sortedFolderNames = Object.keys(groupedBookmarks).sort((a, b) => a.localeCompare(b));
+
+            sortedFolderNames.forEach(folderName => {
                 const categoryDiv = document.createElement('div');
                 categoryDiv.className = `category-section ${openCategories.includes(folderName) ? 'open' : ''}`;
-                categoryDiv.style.backgroundColor = categoryColors[folderName] || '#F5F5F5';
-                categoryDiv.setAttribute('data-folder', folderName);
-
+                
                 const h2 = document.createElement('h2');
-                h2.textContent = `📁 ${folderName}`; // Default folder icon
+                h2.textContent = `📁 ${folderName}`;
                 h2.onclick = () => toggleCategory(folderName);
                 categoryDiv.appendChild(h2);
 
                 const ul = document.createElement('ul');
-                filteredBookmarks[folderName].forEach(bookmark => {
-                    const li = document.createElement('li');
-                    if (searchTerm) {
-                        li.classList.add('search-result-bounce');
-                    }
+                groupedBookmarks[folderName].forEach(bookmark => {
+                    const liWrapper = document.createElement('div');
+                    liWrapper.className = 'bookmark-item-wrapper';
+
+                    const liContent = document.createElement('div');
+                    liContent.className = 'bookmark-item-content';
+                    liContent.dataset.bookmark = JSON.stringify(bookmark);
+                    
+                    liContent.addEventListener('contextmenu', showContextMenu);
+
+                    const deleteButton = document.createElement('button');
+                    deleteButton.className = 'swipe-delete-button';
+                    deleteButton.innerHTML = '🗑️';
+                    deleteButton.onclick = () => deleteBookmark(bookmark);
 
                     const img = document.createElement('img');
-                    img.src = getFaviconUrl(bookmark.url) || "https://placehold.co/24x24/cccccc/000000?text=?";
+                    img.src = getFaviconUrl(bookmark.url);
                     img.alt = bookmark.title;
                     img.className = "category-favicon";
-                    img.onerror = function() { this.onerror=null; this.src="https://placehold.co/24x24/cccccc/000000?text=?"; };
-                    li.appendChild(img);
-
-                    const contentDiv = document.createElement('div');
-                    contentDiv.className = "bookmark-link-content";
+                    img.onerror = function() { this.onerror=null; this.src="https://placehold.co/28x28/cccccc/000000?text=?"; };
+                    liContent.appendChild(img);
+                    
+                    const detailsDiv = document.createElement('div');
+                    detailsDiv.className = 'bookmark-details';
 
                     const anchor = document.createElement('a');
                     anchor.href = bookmark.url;
                     anchor.target = "_blank";
                     anchor.rel = "noopener noreferrer";
                     anchor.textContent = bookmark.title;
-                    contentDiv.appendChild(anchor);
+                    detailsDiv.appendChild(anchor);
 
                     if (bookmark.description) {
                         const descDiv = document.createElement('div');
                         descDiv.className = "bookmark-description";
                         descDiv.textContent = bookmark.description;
-                        contentDiv.appendChild(descDiv);
+                        detailsDiv.appendChild(descDiv);
                     }
-                    li.appendChild(contentDiv);
+                    liContent.appendChild(detailsDiv);
+                    
+                    liWrapper.appendChild(liContent);
+                    liWrapper.appendChild(deleteButton);
+                    
+                    addTouchEvents(liContent);
 
-                    const summaryButton = document.createElement('button');
-                    summaryButton.className = "summary-button";
-                    summaryButton.textContent = "✨ Podsumuj";
-                    summaryButton.onclick = () => generateBookmarkSummary(bookmark.url, bookmark.title);
-                    // Ensure the button is disabled when modal is loading
-                    summaryButton.disabled = summaryModalState.loading;
-                    li.appendChild(summaryButton);
-
-                    ul.appendChild(li);
+                    ul.appendChild(liWrapper);
                 });
                 categoryDiv.appendChild(ul);
                 categoriesSection.appendChild(categoryDiv);
-            }
+            });
         }
 
-        // Function to toggle category open/close state
+        function deleteBookmark(bookmarkToDelete) {
+             if (confirm(`Czy na pewno chcesz usunąć zakładkę "${bookmarkToDelete.title}"?`)) {
+                const isInitial = initialBookmarks.some(
+                    b => b.url === bookmarkToDelete.url && b.title === bookmarkToDelete.title
+                );
+
+                if (isInitial) {
+                    const storedDeletedInitial = localStorage.getItem('deletedInitialBookmarks');
+                    const deletedInitialUrls = storedDeletedInitial ? JSON.parse(storedDeletedInitial) : [];
+                    if (!deletedInitialUrls.includes(bookmarkToDelete.url)) {
+                        deletedInitialUrls.push(bookmarkToDelete.url);
+                        localStorage.setItem('deletedInitialBookmarks', JSON.stringify(deletedInitialUrls));
+                    }
+                }
+                
+                allBookmarksData = allBookmarksData.filter(
+                    b => !(b.url === bookmarkToDelete.url && b.title === bookmarkToDelete.title)
+                );
+                
+                saveBookmarks();
+                filterAndRenderBookmarks(document.getElementById('search-input').value);
+             }
+        }
+        
         function toggleCategory(categoryName) {
             const index = openCategories.indexOf(categoryName);
             if (index > -1) {
-                openCategories.splice(index, 1); // Remove if open
+                openCategories.splice(index, 1);
             } else {
-                openCategories.push(categoryName); // Add if closed
+                openCategories.push(categoryName);
             }
-            renderBookmarkCategories(groupedBookmarks); // Re-render to apply changes
+            renderBookmarkCategories();
         }
-
-        // Function to handle search input
-        function handleSearch() {
-            const searchInput = document.getElementById('search-input');
-            const searchTerm = searchInput.value.toLowerCase();
-
+        
+        function filterAndRenderBookmarks(searchTerm = "") {
+            const term = searchTerm.toLowerCase();
             const filteredRawBookmarks = allBookmarksData.filter(bookmark => {
-                const titleMatch = bookmark.title && bookmark.title.toLowerCase().includes(searchTerm);
-                const urlMatch = bookmark.url && bookmark.url.toLowerCase().includes(searchTerm);
-                const descriptionMatch = bookmark.description && bookmark.description.toLowerCase().includes(searchTerm);
+                if (!term) return true;
+                const titleMatch = bookmark.title && bookmark.title.toLowerCase().includes(term);
+                const urlMatch = bookmark.url && bookmark.url.toLowerCase().includes(term);
+                const descriptionMatch = bookmark.description && bookmark.description.toLowerCase().includes(term);
+                return titleMatch || urlMatch || descriptionMatch;
+            });
+            
+            groupedBookmarks = groupBookmarksByFolder(filteredRawBookmarks);
+            
+            if (term) {
+                const newOpenCategories = Object.keys(groupedBookmarks);
+                openCategories = [...new Set([...openCategories, ...newOpenCategories])];
+            }
+            
+            renderBookmarkCategories();
+            
+            const noResultsMessage = document.getElementById('no-results-message');
+            const shouldShowNoResults = filteredRawBookmarks.length === 0 && term;
+            noResultsMessage.style.display = shouldShowNoResults ? 'block' : 'none';
+            if (shouldShowNoResults) {
+                 noResultsMessage.innerHTML = `Brak wyników dla "${searchTerm}".`;
+            }
+        }
+        
+        function executeSearch() {
+            const searchInput = document.getElementById('search-input');
+            const searchTerm = searchInput.value.trim();
+            const loader = document.getElementById('search-loader');
+            const noResultsMessage = document.getElementById('no-results-message');
+
+            if (!searchTerm) {
+                filterAndRenderBookmarks('');
+                return;
+            }
+
+            const exactMatch = allBookmarksData.find(b => b.title.toLowerCase() === searchTerm.toLowerCase());
+            if (exactMatch) {
+                window.open(exactMatch.url, '_blank');
+                return;
+            }
+
+            const term = searchTerm.toLowerCase();
+            const filteredRawBookmarks = allBookmarksData.filter(bookmark => {
+                const titleMatch = bookmark.title && bookmark.title.toLowerCase().includes(term);
+                const urlMatch = bookmark.url && bookmark.url.toLowerCase().includes(term);
+                const descriptionMatch = bookmark.description && bookmark.description.toLowerCase().includes(term);
                 return titleMatch || urlMatch || descriptionMatch;
             });
 
-            groupedBookmarks = groupBookmarksByFolder(filteredRawBookmarks);
-
-            if (searchTerm) {
-                // Automatically open categories that contain search results
-                openCategories = Object.keys(groupedBookmarks).filter(folderName =>
-                    groupedBookmarks[folderName].length > 0
-                );
+            if (filteredRawBookmarks.length > 0) {
+                filterAndRenderBookmarks(searchTerm);
             } else {
-                // If search term is empty, collapse all categories
-                openCategories = [];
+                noResultsMessage.innerHTML = 'Sekunda - szukam w Google...';
+                noResultsMessage.style.display = 'block';
+                loader.style.display = 'inline-block';
+                document.getElementById('bookmark-categories-section').innerHTML = '';
+                
+                const googleUrl = `https://www.google.com/search?q=${encodeURIComponent(searchTerm)}`;
+                window.open(googleUrl, '_blank');
+
+                setTimeout(() => {
+                    loader.style.display = 'none';
+                    noResultsMessage.style.display = 'none';
+                    searchInput.value = '';
+                    filterAndRenderBookmarks('');
+                }, 3500);
             }
-            renderBookmarkCategories(groupedBookmarks);
         }
+        
+        function addTouchEvents(element) {
+            let touchStartX = 0;
+            let touchStartTime = 0;
+            let longPressTimeout;
 
-        // Function to generate summary using Gemini API
-        async function generateBookmarkSummary(url, title) {
-            const modalOverlay = document.getElementById('summary-modal-overlay');
-            const modalTitle = document.getElementById('summary-modal-title');
-            const modalBody = document.getElementById('summary-modal-body');
+            element.addEventListener('touchstart', e => {
+                touchStartX = e.touches[0].clientX;
+                touchStartTime = new Date().getTime();
+                
+                longPressTimeout = setTimeout(() => {
+                    console.log('Long press detected on:', JSON.parse(element.dataset.bookmark).title);
+                }, 500);
+            }, { passive: true });
 
-            summaryModalState = {
-                isOpen: true,
-                title: `Streszczenie: ${title}`,
-                summary: 'Generowanie streszczenia...',
-                loading: true,
-                error: null,
-            };
-            modalOverlay.classList.add('open');
-            modalTitle.textContent = summaryModalState.title;
-            modalBody.innerHTML = '<p>Generowanie streszczenia...</p>';
-            modalBody.classList.add('loading');
-            modalBody.classList.remove('error');
+            element.addEventListener('touchmove', e => {
+                 clearTimeout(longPressTimeout);
+            });
 
-            try {
-                const prompt = `Podsumuj zawartość strony internetowej pod adresem: ${url}. Streszczenie powinno być zwięzłe i zawierać najważniejsze informacje.`;
+            element.addEventListener('touchend', e => {
+                clearTimeout(longPressTimeout);
+                const touchEndX = e.changedTouches[0].clientX;
+                const swipeDistance = touchStartX - touchEndX;
 
-                let chatHistory = [];
-                chatHistory.push({ role: "user", parts: [{ text: prompt }] });
-
-                const payload = { contents: chatHistory };
-                const apiKey = ""; // Leave as-is, Canvas will provide it at runtime.
-                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
-
-                const response = await fetch(apiUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
+                document.querySelectorAll('.bookmark-item-content.swiped').forEach(item => {
+                    if(item !== element) item.classList.remove('swiped');
                 });
 
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(`Błąd API Gemini: ${errorData.error.message || response.statusText}`);
+                if (swipeDistance > 50) { 
+                    element.classList.add('swiped');
+                } else if (swipeDistance < -50) {
+                    element.classList.remove('swiped');
                 }
+            });
+        }
 
-                const result = await response.json();
-                let generatedText = 'Nie udało się wygenerować streszczenia.';
+        function getDynamicGreeting() {
+            if (allGreetingsForHeader && allGreetingsForHeader.length > 0) {
+                const randomGreetingIndex = Math.floor(Math.random() * allGreetingsForHeader.length);
+                return allGreetingsForHeader[randomGreetingIndex];
+            }
+            return null;
+        }
 
-                if (result.candidates && result.candidates.length > 0 &&
-                    result.candidates[0].content && result.candidates[0].content.parts &&
-                    result.candidates[0].content.parts.length > 0) {
-                    generatedText = result.candidates[0].content.parts[0].text;
-                }
-
-                summaryModalState.summary = generatedText;
-                summaryModalState.loading = false;
-                modalBody.innerHTML = `<p>${summaryModalState.summary}</p>`;
-                modalBody.classList.remove('loading');
-
-            } catch (error) {
-                console.error("Błąd generowania streszczenia:", error);
-                summaryModalState.summary = 'Wystąpił błąd podczas generowania streszczenia. Spróbuj ponownie później.';
-                summaryModalState.loading = false;
-                summaryModalState.error = error.message;
-                modalBody.innerHTML = `<p>Błąd: ${summaryModalState.summary}</p>`;
-                modalBody.classList.remove('loading');
-                modalBody.classList.add('error');
+        function applyTheme(theme) {
+            const root = document.documentElement;
+            for (const [key, value] of Object.entries(theme.values)) {
+                root.style.setProperty(key, value);
             }
         }
-
-        function closeSummaryModal() {
-            const modalOverlay = document.getElementById('summary-modal-overlay');
-            modalOverlay.classList.remove('open');
-            summaryModalState = {
-                isOpen: false,
-                title: '',
-                summary: '',
-                loading: false,
-                error: null,
-            };
+        
+        function changeTheme() {
+            let newIndex;
+            do {
+                newIndex = Math.floor(Math.random() * themes.length);
+            } while (newIndex === currentThemeIndex); 
+            
+            currentThemeIndex = newIndex;
+            applyTheme(themes[currentThemeIndex]);
+        }
+        
+        function openAddModal() {
+            const datalist = document.getElementById('category-suggestions');
+            datalist.innerHTML = '';
+            const existingCategories = [...new Set(allBookmarksData.map(b => b.folder))];
+            existingCategories.forEach(cat => {
+                const option = document.createElement('option');
+                option.value = cat;
+                datalist.appendChild(option);
+            });
+            document.getElementById('add-bookmark-modal').classList.add('open');
         }
 
-        // Initialize on DOMContentLoaded
+        function closeAddModal() {
+             document.getElementById('add-bookmark-modal').classList.remove('open');
+             document.getElementById('add-bookmark-form').reset();
+        }
+        
+        let currentContextMenuTarget = null;
+        const contextMenu = document.getElementById('custom-context-menu');
+
+        function showContextMenu(e) {
+            e.preventDefault();
+            hideContextMenu();
+            currentContextMenuTarget = e.currentTarget;
+            contextMenu.style.top = `${e.pageY}px`;
+            contextMenu.style.left = `${e.pageX}px`;
+            contextMenu.style.display = 'block';
+        }
+
+        function hideContextMenu() {
+            contextMenu.style.display = 'none';
+            currentContextMenuTarget = null;
+        }
+
+        function animateGreetingHeader(element, text) {
+            element.innerHTML = '';
+            element.classList.add('typewriter-glow');
+            let delay = 0;
+            text.split('').forEach(char => {
+                const span = document.createElement('span');
+                span.className = 'char';
+                span.textContent = char === ' ' ? '\u00A0' : char;
+                span.style.animationDelay = `${delay}ms`;
+                element.appendChild(span);
+                delay += 70;
+            });
+        }
+
+
         document.addEventListener('DOMContentLoaded', () => {
+            loadBookmarks();
+            
+            const themeButton = document.getElementById('theme-button');
+            themeButton.addEventListener('click', changeTheme);
+            
+            const highContrastTheme = themes.find(t => t.name === 'LightHighContrast');
+            if (highContrastTheme) {
+                applyTheme(highContrastTheme);
+                currentThemeIndex = themes.indexOf(highContrastTheme);
+            }
+
+            const addModalCloseButton = document.getElementById('add-modal-close-button');
+            const addBookmarkForm = document.getElementById('add-bookmark-form');
+            const deleteContextBtn = document.getElementById('delete-context-btn');
+            
+            addModalCloseButton.addEventListener('click', closeAddModal);
+
+            addBookmarkForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const newBookmark = {
+                    title: document.getElementById('bookmark-title').value,
+                    url: document.getElementById('bookmark-url').value,
+                    folder: document.getElementById('bookmark-folder').value,
+                    description: document.getElementById('bookmark-description').value,
+                };
+                allBookmarksData.push(newBookmark);
+                saveBookmarks();
+                closeAddModal();
+                filterAndRenderBookmarks();
+            });
+            
+            deleteContextBtn.addEventListener('click', () => {
+                if (currentContextMenuTarget) {
+                    const bookmarkData = JSON.parse(currentContextMenuTarget.dataset.bookmark);
+                    deleteBookmark(bookmarkData);
+                }
+                hideContextMenu();
+            });
+
+            window.addEventListener('click', hideContextMenu);
+            
             const splashScreen = document.getElementById('splash-screen');
             const splashMessageDiv = splashScreen.querySelector('.splash-message');
             const mainContentWrapper = document.getElementById('main-content-wrapper');
             const greetingHeader = document.getElementById('greeting-header');
-            const searchInput = document.getElementById('search-input');
-            const summaryModalCloseButton = document.getElementById('summary-modal-close-button');
-
-            // Get dynamic greeting data
-            const greetingData = getDynamicGreeting();
-            // Display only the foreign greeting in the header
-            greetingHeader.textContent = greetingData.displayGreeting;
-
-            // Add click listener to the greeting header
-            greetingHeader.addEventListener('click', async () => {
-                // Open Google Translate with the foreign text
-                const translateUrl = `https://translate.google.com/?sl=auto&tl=pl&text=${encodeURIComponent(greetingData.textToTranslate)}`;
-                window.open(translateUrl, '_blank');
-
-                // Copy the Polish translation to the clipboard
-                try {
-                    // Using execCommand for better iframe compatibility
-                    const textarea = document.createElement('textarea');
-                    textarea.value = greetingData.polishTranslationToCopy;
-                    textarea.style.position = 'fixed'; // Prevent scrolling to bottom of page in MS Edge.
-                    textarea.style.left = '-9999px'; // Hide the textarea off-screen
-                    document.body.appendChild(textarea);
-                    textarea.focus();
-                    textarea.select();
-                    document.execCommand('copy');
-                    document.body.removeChild(textarea);
-                    console.log('Polish translation copied to clipboard:', greetingData.polishTranslationToCopy);
-                    // Optionally, provide a visual feedback to the user that text was copied
-                    // e.g., a small temporary message on screen
-                } catch (err) {
-                    console.error('Failed to copy text: ', err);
-                }
-            });
-
-            // Select a random idiom and display language for splash screen
-            const randomIdiomIndex = Math.floor(Math.random() * allGreetingsForHeader.length); // Use allGreetingsForHeader here
-            const selectedIdiom = allGreetingsForHeader[randomIdiomIndex]; // Use allGreetingsForHeader here
-
-            // Set a random splash background
-            const randomBgIndex = Math.floor(Math.random() * splashBackgrounds.length);
-            const currentSplashBackground = splashBackgrounds[randomBgIndex];
-            splashScreen.style.background = currentSplashBackground;
-
-            // Populate splash message
-            splashMessageDiv.innerHTML = `
-                <span class="icon">${selectedIdiom.emoji}</span>
-                <span class="original-text">${selectedIdiom.text}</span>
-                <span class="translation-text">${selectedIdiom.polishTranslation}</span>
-            `;
-
-            const splashDisplayDuration = 3500; // Text visible for 3.5 seconds
-            const fadeOutTransitionDuration = 600; // Fade out takes 0.6 seconds
-
-            // Start splash screen animation
+            
+            const splashGreeting = getDynamicGreeting();
+            if (splashGreeting) {
+                splashMessageDiv.innerHTML = `<span>${splashGreeting.emoji}</span> <span>${splashGreeting.text}</span><br><span style="font-size:0.8em; color:#ddd;">${splashGreeting.polishTranslation}</span>`;
+            }
+            
             setTimeout(() => {
-                splashScreen.classList.add('fade-out'); // Start fade-out of splash
-                // After the fade-out transition, completely hide and ensure no pointer events
-                setTimeout(() => {
-                    splashScreen.style.display = 'none'; // Hide splash completely
-                    splashScreen.style.zIndex = '-1'; // Send to back
-                    splashScreen.style.pointerEvents = 'none'; // Ensure no interactions
-                    mainContentWrapper.classList.add('show'); // Show main content
-                }, fadeOutTransitionDuration + 50); // Small additional delay to ensure transition completes
-            }, splashDisplayDuration);
+                splashScreen.classList.add('fade-out');
+                setTimeout(() => { splashScreen.style.display = 'none'; }, 600);
+                mainContentWrapper.classList.add('show');
+            }, 3500);
 
+            const headerGreeting = getDynamicGreeting();
+            if(headerGreeting) {
+                const fullGreetingText = `${headerGreeting.emoji} ${headerGreeting.text}`;
+                animateGreetingHeader(greetingHeader, fullGreetingText);
 
-            // Dynamically load the weather widget script
+                greetingHeader.addEventListener('click', () => {
+                    window.open(`https://translate.google.com/?sl=auto&tl=pl&text=${encodeURIComponent(headerGreeting.text)}`, '_blank');
+                });
+            }
+            
             const scriptId = 'weatherwidget-io-js';
             if (!document.getElementById(scriptId)) {
                 const script = document.createElement('script');
                 script.id = scriptId;
                 script.src = 'https://weatherwidget.io/js/widget.min.js';
-                script.async = true; // Make it async to not block rendering
+                script.async = true;
                 document.body.appendChild(script);
             }
-
-            // Initial render of quick access and bookmarks
+            
+            filterAndRenderBookmarks('');
             renderQuickAccessLinks();
-            groupedBookmarks = groupBookmarksByFolder(allBookmarksData);
-            renderBookmarkCategories(groupedBookmarks);
 
-            // Event listener for search input
-            searchInput.addEventListener('input', handleSearch);
-
-            // Event listener for modal close button
-            summaryModalCloseButton.addEventListener('click', closeSummaryModal);
+            const searchInput = document.getElementById('search-input');
+            searchInput.addEventListener('input', () => filterAndRenderBookmarks(searchInput.value));
+            searchInput.addEventListener('keydown', (event) => {
+                if (event.key === 'Enter') {
+                    executeSearch();
+                }
+            });
         });
+
     </script>
 </body>
 </html>
