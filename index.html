@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Menedżer Zakładek</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400..700;1,400..700&display=swap" rel="stylesheet">
     <style>
         /* General styles with CSS Variables for theming */
         :root {
@@ -31,7 +31,7 @@
         }
 
         body {
-            font-family: 'Inter', sans-serif;
+            font-family: 'Lora', serif; /* Changed font */
             background: linear-gradient(135deg, var(--background-gradient-start), var(--background-gradient-end));
             color: var(--text-primary);
             min-height: 100vh;
@@ -130,38 +130,93 @@
             background: var(--container-bg);
             border-radius: 16px;
             box-shadow: 0 8px 30px var(--shadow-medium);
-            padding: 35px;
+            padding: 25px 35px; /* More horizontal padding */
             overflow: hidden;
             transition: background-color 0.5s ease;
         }
+        
+        .header {
+            text-align: center;
+        }
+
+        .header .greeting-container {
+            position: relative;
+            display: inline-block;
+            margin-bottom: 25px;
+        }
 
         .header h1 {
-            font-size: 3em;
+            font-size: clamp(1.5em, 4.5vw, 2.8em); /* Adjusted responsive font size */
             font-weight: 700;
             color: var(--text-primary);
-            margin-bottom: 12px;
             cursor: pointer;
-            min-height: 1.2em; /* Ensure space for text */
+            min-height: 1.2em;
+            line-height: 1.2;
+            transition: transform 0.2s ease-out;
+            word-wrap: break-word; /* Added for wrapping */
+            overflow-wrap: break-word; /* Standard property */
         }
+        
+        .greeting-container.interactive h1:hover {
+            transform: scale(1.05);
+        }
+
+        .greeting-tooltip {
+            visibility: hidden;
+            opacity: 0;
+            position: absolute;
+            top: 100%; /* Position below the h1 */
+            left: 50%;
+            transform: translateX(-50%) scale(0.5); /* Base transform */
+            background-color: var(--text-primary);
+            color: var(--container-bg);
+            padding: 15px 25px;
+            border-radius: 12px;
+            font-size: 1.4rem;
+            font-weight: 500;
+            white-space: nowrap;
+            margin-top: 15px; /* Space between text and tooltip */
+            z-index: 10;
+            pointer-events: none;
+            transition: opacity 0.4s ease-out, transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* Slower transition */
+        }
+        
+        .greeting-tooltip::after {
+            content: "";
+            position: absolute;
+            bottom: 100%;  /* At the top of the tooltip */
+            left: 50%;
+            margin-left: -10px;
+            border-width: 10px;
+            border-style: solid;
+            border-color: transparent transparent var(--text-primary) transparent;
+        }
+
+        .greeting-container.interactive:hover .greeting-tooltip {
+            visibility: visible;
+            opacity: 1;
+            transform: translateX(-50%) scale(1) translateY(0);
+        }
+
 
         /* Greeting Animation */
-        .typewriter-glow .char {
+        .typewriter-bounce .char {
             opacity: 0;
-            animation: typeGlow 0.1s ease-out forwards;
+            animation: typeBounce 0.1s ease-out forwards;
         }
 
-        @keyframes typeGlow {
+        @keyframes typeBounce {
             0% { 
                 opacity: 0;
-                text-shadow: 0 0 20px rgba(255,255,255,0);
+                transform: translateY(10px);
             }
-            50% { 
+            60% { 
                 opacity: 1;
-                text-shadow: 0 0 20px var(--primary-color);
+                transform: translateY(-2px);
             }
             100% { 
                 opacity: 1;
-                text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+                transform: translateY(0);
             }
         }
 
@@ -179,7 +234,7 @@
             gap: 15px;
             transition: box-shadow 0.3s ease, background-color 0.5s ease;
             max-width: 700px;
-            width: 90%;
+            width: 100%;
         }
 
         .search-input {
@@ -220,12 +275,11 @@
 
         /* Quick Access Section Styles */
         .quick-access-section {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 20px;
-            margin-bottom: 45px;
-            padding: 25px;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(85px, 1fr)); /* Responsive grid */
+            gap: 15px;
+            margin-bottom: 30px;
+            padding: 15px;
             background: var(--quick-access-bg);
             border-radius: 14px;
             box-shadow: 0 4px 15px var(--shadow-light);
@@ -237,12 +291,12 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            width: 100px; /* Increased size for touch */
-            height: 100px; /* Increased size for touch */
+            width: 100%; /* Full width within grid cell */
+            aspect-ratio: 1 / 1; /* Maintain square shape */
             background: var(--item-bg);
             border-radius: 16px; 
             box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
-            transition: transform 0.25s ease, box-shadow 0.25s ease, background-color 0.5s ease;
+            transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.5s ease;
             cursor: pointer;
             text-align: center;
             text-decoration: none;
@@ -258,17 +312,24 @@
         }
 
         .quick-access-icon {
-            font-size: 2.8em;
-            margin-bottom: 8px;
-            width: 50px;
-            height: 50px;
+            font-size: 2.5em;
+            margin-bottom: 5px;
+            width: 45px;
+            height: 45px;
             object-fit: contain;
+        }
+        .quick-access-icon svg {
+            width: 100%;
+            height: 100%;
+            fill: var(--text-primary);
         }
 
         .quick-access-title {
-            font-size: 0.9em;
-            font-weight: 600;
+            font-size: 0.8em;
+            font-weight: 500;
             color: var(--text-secondary);
+            padding: 0 5px;
+            text-transform: uppercase;
         }
 
         /* Category and Bookmark Styles */
@@ -277,9 +338,9 @@
         }
 
         .category-section h2 {
-            font-size: 2.2em;
+            font-size: 1.8em;
             color: var(--text-primary);
-            margin-bottom: 25px;
+            margin-bottom: 20px;
             cursor: pointer;
             display:flex; 
             align-items:center;
@@ -314,7 +375,7 @@
         
         .bookmark-item-content {
             background: var(--item-bg);
-            padding: 20px;
+            padding: 15px;
             display: flex;
             align-items: center;
             gap: 15px;
@@ -339,7 +400,7 @@
         .bookmark-details a {
             text-decoration: none;
             color: var(--text-primary);
-            font-size: 1.2em;
+            font-size: 1.1em;
             font-weight: 600;
         }
 
@@ -448,9 +509,12 @@
     <div id="main-content-wrapper" class="main-content-wrapper">
         <div class="container">
             <div class="header">
-                <h1 id="greeting-header"></h1>
+                 <div class="greeting-container">
+                    <h1 id="greeting-header"></h1>
+                    <div id="greeting-tooltip" class="greeting-tooltip">Violu, nie jesteś pewna, co to znaczy - naciśnij mnie!</div>
+                </div>
                 <div class="search-bar-container">
-                    <input type="text" id="search-input" class="search-input" placeholder="Wpisz szukaną frazę lub naciśnij Enter, by pytać Google...">
+                    <input type="text" id="search-input" class="search-input" placeholder="Wpisz szukaną frazę lub naciśnij Enter...">
                     <div id="search-loader" class="loading-dots" style="display: none;">
                         <span class="dot1"></span>
                         <span class="dot2"></span>
@@ -594,7 +658,7 @@
             { folder: "Historia", title: "Niccolo Paganini (PDF)", url: "https://www.sm1st.wroclaw.pl/wp-content/uploads/2020/05/1.Niccolo-Paganini-180-rocznica-s%CC%81mierci.pdf", description: "Plik PDF o Niccolo Paganinim." },
             { folder: "Rozrywka", title: "Kultowe Pary Filmowe (Ofeminin.pl)", url: "https://www.ofeminin.pl/milosc/zwiazek/12-kultowych-par-z-najwiekszych-kinowych-romansow/hyyxvms", description: "12 kultowych par z największych kinowych romansów." }
         ];
-        const quickAccessLinks = [ { title: "Onet Poczta", url: "https://poczta.onet.pl/" }, { title: "MS Teams", url: "https://teams.microsoft.com/" }, { title: "YouTube", url: "https://www.youtube.com/" }, { title: "Allegro", url: "https://allegro.pl/" }, { title: "Letyshops", url: "https://letyshops.com/pl/" }, { title: "AliExpress", url: "https://www.aliexpress.com/" }, { title: "Instagram", url: "https://www.instagram.com/" }, { title: "Messenger", url: "https://www.messenger.com/" }, { title: "WhatsApp", url: "https://web.whatsapp.com/" }, { title: "Dodaj", url: "#", icon: "➕" }, ];
+        const quickAccessLinks = [ { title: "ONET POCZTA", url: "https://poczta.onet.pl/" }, { title: "GMAIL", svg: `<svg viewBox="0 0 32 32"><path d="M32 6v20c0 1.135-0.865 2-2 2h-2V12.438L16 22L4 12.438V28H2c-1.135 0-2-0.865-2-2V6c0-0.781 0.875-1.219 1.5-0.75L16 16l14.5-10.75C31.125 4.781 32 5.219 32 6z" fill="#ea4335"/><path d="M4 12.438l12 9.562l12-9.563V6c0-0.781-0.875-1.219-1.5-0.75L16 16L1.5 5.25C0.875 4.781 0 5.219 0 6v6.438z" fill="#4285f4"/></svg>`, url: "https://mail.google.com/" }, { title: "WP POCZTA", url: "https://poczta.wp.pl/" }, { title: "MS TEAMS", url: "https://teams.microsoft.com/" }, { title: "YOUTUBE", url: "https://www.youtube.com/" }, { title: "ALLEGRO", url: "https://allegro.pl/" }, { title: "LETYSHOPS", url: "https://letyshops.com/pl/" }, { title: "ALIEXPRESS", url: "https://www.aliexpress.com/" }, { title: "INSTAGRAM", url: "https://www.instagram.com/" }, { title: "MESSENGER", url: "https://www.messenger.com/" }, { title: "WHATSAPP", svg: `<svg viewBox="0 0 24 24"><path d="M16.75 13.96c.25.42.45.83.24 1.32-.2.49-.83.74-1.32.83-.49.1-.83.3-1.32.2s-.83-.2-1.32-.45c-.49-.24-1.31-0.65-2.09-1.28s-1.4-1.31-1.6-1.55c-.2-.25-1.13-1.44-1.13-2.73s.69-1.99 1.13-2.29c.44-.3 1.02-.25 1.28-.25.25 0 .49.05.69.54s.44 1.32.49 1.41c.05.1.05.2-.05.34-.1.15-.2.25-.34.4s-.3.3-.44.44c-.15.15-.2.25-.1.4.1.15.44.74.93 1.23s.88.93 1.23 1.02c.15.1.25 0 .4-.15s.3-.2.44-.34c.15-.15.3-.25.44-.2.15 0 .64.2 1.41.49s1.07.49 1.28.69c.2.19.3.44.24.93zm-4.71-11.69c-6.62 0-12 5.38-12 12s5.38 12 12 12 12-5.38 12-12-5.38-12-12-12zm0 2c5.52 0 10 4.48 10 10s-4.48 10-10 10-10-4.48-10-10 4.48-10 10-10z" fill="#25d366"/></svg>`, url: "https://web.whatsapp.com/" }, { title: "Dodaj", url: "#", icon: "➕" }, ];
         const allGreetingsForHeader = [
             { emoji: "🌿", text: "Cześć Viola! Jak się mają Twoje pelargonie?", languageCode: "pl", polishTranslation: "Cześć Viola! Jak się mają Twoje pelargonie?" },
             { emoji: "☀️", text: "Witaj w słoneczny dzień! Gotowa na ogród?", languageCode: "pl", polishTranslation: "Witaj w słoneczny dzień! Gotowa na ogród?" },
@@ -718,7 +782,8 @@
         let groupedBookmarks = {};
         let openCategories = [];
 
-        // --- LOCAL STORAGE FUNCTIONS ---
+        // --- All JS functions are here and complete ---
+        
         function loadBookmarks() {
             const storedUserBookmarks = localStorage.getItem('userBookmarks');
             const storedDeletedInitial = localStorage.getItem('deletedInitialBookmarks');
@@ -772,7 +837,12 @@
                 anchor.rel = "noopener noreferrer";
                 anchor.className = "quick-access-item";
 
-                if (link.icon) {
+                if (link.svg) {
+                    const iconDiv = document.createElement('div');
+                    iconDiv.className = "quick-access-icon";
+                    iconDiv.innerHTML = link.svg;
+                    anchor.appendChild(iconDiv);
+                } else if (link.icon) {
                     const iconSpan = document.createElement('span');
                     iconSpan.className = "quick-access-icon";
                     iconSpan.textContent = link.icon;
@@ -1070,9 +1140,18 @@
             currentContextMenuTarget = null;
         }
 
-        function animateGreetingHeader(element, text) {
+        function animateGreetingHeader(element, emoji, text) {
+            const container = element.parentElement;
+            container.classList.remove('interactive');
             element.innerHTML = '';
-            element.classList.add('typewriter-glow');
+            element.classList.add('typewriter-bounce');
+
+            if (emoji) {
+                const emojiSpan = document.createElement('span');
+                emojiSpan.textContent = emoji + '\u00A0';
+                element.appendChild(emojiSpan);
+            }
+
             let delay = 0;
             text.split('').forEach(char => {
                 const span = document.createElement('span');
@@ -1082,6 +1161,10 @@
                 element.appendChild(span);
                 delay += 70;
             });
+
+            setTimeout(() => {
+                container.classList.add('interactive');
+            }, delay + 200);
         }
 
 
@@ -1091,10 +1174,10 @@
             const themeButton = document.getElementById('theme-button');
             themeButton.addEventListener('click', changeTheme);
             
-            const highContrastTheme = themes.find(t => t.name === 'LightHighContrast');
-            if (highContrastTheme) {
-                applyTheme(highContrastTheme);
-                currentThemeIndex = themes.indexOf(highContrastTheme);
+            const defaultTheme = themes.find(t => t.name === 'Lavender');
+            if (defaultTheme) {
+                applyTheme(defaultTheme);
+                currentThemeIndex = themes.indexOf(defaultTheme);
             }
 
             const addModalCloseButton = document.getElementById('add-modal-close-button');
@@ -1139,19 +1222,19 @@
             
             setTimeout(() => {
                 splashScreen.classList.add('fade-out');
-                setTimeout(() => { splashScreen.style.display = 'none'; }, 600);
-                mainContentWrapper.classList.add('show');
+                setTimeout(() => { 
+                    splashScreen.style.display = 'none'; 
+                    mainContentWrapper.classList.add('show');
+                    const headerGreeting = getDynamicGreeting();
+                    if(headerGreeting) {
+                        animateGreetingHeader(greetingHeader, headerGreeting.emoji, headerGreeting.text);
+                        greetingHeader.addEventListener('click', () => {
+                            window.open(`https://translate.google.com/?sl=auto&tl=pl&text=${encodeURIComponent(headerGreeting.text)}`, '_blank');
+                        });
+                    }
+                }, 600);
             }, 3500);
 
-            const headerGreeting = getDynamicGreeting();
-            if(headerGreeting) {
-                const fullGreetingText = `${headerGreeting.emoji} ${headerGreeting.text}`;
-                animateGreetingHeader(greetingHeader, fullGreetingText);
-
-                greetingHeader.addEventListener('click', () => {
-                    window.open(`https://translate.google.com/?sl=auto&tl=pl&text=${encodeURIComponent(headerGreeting.text)}`, '_blank');
-                });
-            }
             
             const scriptId = 'weatherwidget-io-js';
             if (!document.getElementById(scriptId)) {
