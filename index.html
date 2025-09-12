@@ -4,6 +4,23 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Menedżer Zakładek</title>
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/manifest.json">
+    
+    <!-- Theme colors -->
+    <meta name="theme-color" content="#3498db">
+    <meta name="msapplication-TileColor" content="#3498db">
+    
+    <!-- Apple-specific meta tags -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Tiola">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg width='192' height='192' viewBox='0 0 192 192' xmlns='http://www.w3.org/2000/svg'%3E%3Cdefs%3E%3ClinearGradient id='bg' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' style='stop-color:%233498db;stop-opacity:1' /%3E%3Cstop offset='100%25' style='stop-color:%232980b9;stop-opacity:1' /%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='192' height='192' rx='29' fill='url(%23bg)'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dominant-baseline='middle' font-family='Arial, sans-serif' font-size='76' fill='white'%3E📚%3C/text%3E%3C/svg%3E">
+    
+    <!-- Standard favicon -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg width='32' height='32' viewBox='0 0 32 32' xmlns='http://www.w3.org/2000/svg'%3E%3Cdefs%3E%3ClinearGradient id='bg' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' style='stop-color:%233498db;stop-opacity:1' /%3E%3Cstop offset='100%25' style='stop-color:%232980b9;stop-opacity:1' /%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='32' height='32' rx='5' fill='url(%23bg)'/%3E%3Ctext x='50%25' y='50%25' text-anchor='middle' dominant-baseline='middle' font-family='Arial, sans-serif' font-size='13' fill='white'%3E📚%3C/text%3E%3C/svg%3E">
+    
     <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400..700;1,400..700&display=swap" rel="stylesheet">
     <style>
         /* General styles with CSS Variables for theming */
@@ -1256,6 +1273,179 @@
                 }
             });
         });
+
+        // PWA functionality
+        let deferredPrompt;
+        let installButton = null;
+
+        // Register service worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', async () => {
+                try {
+                    const registration = await navigator.serviceWorker.register('/sw.js');
+                    console.log('Service Worker registered successfully:', registration);
+                    
+                    // Check for updates
+                    registration.addEventListener('updatefound', () => {
+                        const newWorker = registration.installing;
+                        newWorker.addEventListener('statechange', () => {
+                            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                // Show update available notification
+                                showUpdateAvailable();
+                            }
+                        });
+                    });
+                } catch (error) {
+                    console.log('Service Worker registration failed:', error);
+                }
+            });
+        }
+
+        // Handle install prompt
+        window.addEventListener('beforeinstallprompt', (event) => {
+            console.log('PWA install prompt triggered');
+            event.preventDefault();
+            deferredPrompt = event;
+            showInstallButton();
+        });
+
+        // Handle install success
+        window.addEventListener('appinstalled', () => {
+            console.log('PWA was installed');
+            hideInstallButton();
+            deferredPrompt = null;
+        });
+
+        function showInstallButton() {
+            if (!installButton) {
+                installButton = document.createElement('button');
+                installButton.textContent = '📱 Zainstaluj aplikację';
+                installButton.className = 'theme-button';
+                installButton.style.cssText = `
+                    position: fixed;
+                    bottom: 20px;
+                    right: 20px;
+                    background-color: var(--primary-color);
+                    color: white;
+                    border: none;
+                    border-radius: 25px;
+                    padding: 12px 20px;
+                    font-size: 14px;
+                    cursor: pointer;
+                    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+                    transition: all 0.3s ease;
+                    z-index: 1002;
+                `;
+                
+                installButton.addEventListener('click', installPWA);
+                installButton.addEventListener('mouseenter', () => {
+                    installButton.style.transform = 'scale(1.05)';
+                    installButton.style.backgroundColor = 'var(--primary-color-dark)';
+                });
+                installButton.addEventListener('mouseleave', () => {
+                    installButton.style.transform = 'scale(1)';
+                    installButton.style.backgroundColor = 'var(--primary-color)';
+                });
+                
+                document.body.appendChild(installButton);
+            }
+        }
+
+        function hideInstallButton() {
+            if (installButton) {
+                installButton.remove();
+                installButton = null;
+            }
+        }
+
+        async function installPWA() {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                console.log(`User response to install prompt: ${outcome}`);
+                deferredPrompt = null;
+                hideInstallButton();
+            }
+        }
+
+        function showUpdateAvailable() {
+            const updateBanner = document.createElement('div');
+            updateBanner.innerHTML = `
+                <div style="
+                    position: fixed;
+                    top: 20px;
+                    left: 50%;
+                    transform: translateX(-50%);
+                    background: var(--primary-color);
+                    color: white;
+                    padding: 12px 20px;
+                    border-radius: 8px;
+                    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+                    z-index: 1003;
+                    font-size: 14px;
+                    cursor: pointer;
+                ">
+                    🔄 Nowa wersja dostępna - kliknij aby odświeżyć
+                </div>
+            `;
+            
+            updateBanner.onclick = () => {
+                window.location.reload();
+            };
+            
+            document.body.appendChild(updateBanner);
+            
+            setTimeout(() => {
+                updateBanner.remove();
+            }, 10000);
+        }
+
+        // Handle offline/online status
+        function updateOnlineStatus() {
+            const statusIndicator = document.getElementById('online-status') || createStatusIndicator();
+            
+            if (navigator.onLine) {
+                statusIndicator.textContent = '';
+                statusIndicator.style.display = 'none';
+            } else {
+                statusIndicator.textContent = '📴 Tryb offline - Twoje zakładki są nadal dostępne!';
+                statusIndicator.style.display = 'block';
+            }
+        }
+
+        function createStatusIndicator() {
+            const indicator = document.createElement('div');
+            indicator.id = 'online-status';
+            indicator.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                background: #f39c12;
+                color: white;
+                text-align: center;
+                padding: 8px;
+                font-size: 14px;
+                z-index: 1004;
+                display: none;
+            `;
+            document.body.appendChild(indicator);
+            return indicator;
+        }
+
+        // Listen for online/offline events
+        window.addEventListener('online', updateOnlineStatus);
+        window.addEventListener('offline', updateOnlineStatus);
+        updateOnlineStatus(); // Initial check
+
+        // Handle app shortcut actions
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('action') === 'add') {
+            // Auto-open add bookmark modal if launched from shortcut
+            setTimeout(() => {
+                openAddModal();
+            }, 1000);
+        }
 
     </script>
 </body>

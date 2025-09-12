@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Offline - Tiola Bookmark Manager</title>
+    <style>
+        body {
+            font-family: 'Lora', serif;
+            background: linear-gradient(135deg, #e0eafc, #cfdef3);
+            color: #2c3e50;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 0;
+            padding: 20px;
+        }
+        .offline-container {
+            background: white;
+            border-radius: 16px;
+            padding: 40px;
+            text-align: center;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+            max-width: 500px;
+        }
+        .offline-icon {
+            font-size: 4em;
+            margin-bottom: 20px;
+        }
+        h1 {
+            color: #3498db;
+            margin-bottom: 20px;
+        }
+        p {
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+        .retry-button {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background 0.3s ease;
+        }
+        .retry-button:hover {
+            background: #2980b9;
+        }
+    </style>
+</head>
+<body>
+    <div class="offline-container">
+        <div class="offline-icon">📴</div>
+        <h1>Tryb offline</h1>
+        <p>Brak połączenia z internetem, ale Twoje zakładki są nadal dostępne!</p>
+        <p>Sprawdź połączenie i spróbuj ponownie.</p>
+        <button class="retry-button" onclick="window.location.reload()">
+            🔄 Spróbuj ponownie
+        </button>
+    </div>
+    
+    <script>
+        // Check for connection and redirect to main page if online
+        function checkConnection() {
+            if (navigator.onLine) {
+                window.location.href = '/';
+            }
+        }
+        
+        window.addEventListener('online', checkConnection);
+        
+        // Check every 5 seconds
+        setInterval(checkConnection, 5000);
+    </script>
+</body>
+</html>
