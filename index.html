@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="pl">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Menedżer Zakładek</title>
+    <title>Bookmark Manager</title>
     <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400..700;1,400..700&display=swap" rel="stylesheet">
     <style>
         /* General styles with CSS Variables for theming */
@@ -49,9 +49,11 @@
             top: 20px;
             right: 20px;
             z-index: 1001;
+            display: flex;
+            gap: 10px;
         }
 
-        .theme-button {
+        .theme-button, .profile-button, .export-button, .import-button {
             background-color: var(--primary-color);
             color: white;
             border: none;
@@ -66,7 +68,10 @@
             box-shadow: 0 4px 15px rgba(0,0,0,0.2);
             transition: background-color 0.3s ease, transform 0.2s ease;
         }
-        .theme-button:hover, .theme-button:active {
+        .theme-button:hover, .theme-button:active,
+        .profile-button:hover, .profile-button:active,
+        .export-button:hover, .export-button:active,
+        .import-button:hover, .import-button:active {
             background-color: var(--primary-color-dark);
             transform: scale(1.1);
         }
@@ -499,8 +504,12 @@
 </head>
 <body>
     <div class="theme-button-container">
-        <button id="theme-button" class="theme-button" title="Zmień motyw">🎨</button>
+        <button id="profile-button" class="profile-button" title="Profile">👤</button>
+        <button id="export-button" class="export-button" title="Export Data">💾</button>
+        <button id="import-button" class="import-button" title="Import Data">📂</button>
+        <button id="theme-button" class="theme-button" title="Change Theme">🎨</button>
     </div>
+    <input type="file" id="import-file-input" accept=".json" style="display: none;">
 
     <div id="splash-screen" class="splash-screen">
         <div class="splash-message"></div>
@@ -511,18 +520,15 @@
             <div class="header">
                  <div class="greeting-container">
                     <h1 id="greeting-header"></h1>
-                    <div id="greeting-tooltip" class="greeting-tooltip">Violu, nie jesteś pewna, co to znaczy - naciśnij mnie!</div>
+                    <div id="greeting-tooltip" class="greeting-tooltip">Click to translate!</div>
                 </div>
                 <div class="search-bar-container">
-                    <input type="text" id="search-input" class="search-input" placeholder="Wpisz szukaną frazę lub naciśnij Enter...">
+                    <input type="text" id="search-input" class="search-input" placeholder="Search or press Enter...">
                     <div id="search-loader" class="loading-dots" style="display: none;">
                         <span class="dot1"></span>
                         <span class="dot2"></span>
                         <span class="dot3"></span>
                     </div>
-                </div>
-                <div class="weather-widget-container" style="margin-bottom: 20px;">
-                    <a class="weatherwidget-io" href="https://forecast7.com/pl/52d3421d24/wolomin/" data-label_1="WOŁOMIN" data-icons="Climacons Animated" data-mode="Forecast" data-days="3" data-theme="weather_one">WOŁOMIN</a>
                 </div>
             </div>
 
@@ -536,13 +542,13 @@
     <div id="add-bookmark-modal" class="modal-overlay">
         <div class="modal-content">
             <div class="modal-header">
-                <h3 id="form-modal-title">Dodaj nową zakładkę</h3>
+                <h3 id="form-modal-title">Add New Bookmark</h3>
                 <button id="add-modal-close-button" class="modal-close-button">×</button>
             </div>
             <div class="modal-body">
                  <form id="add-bookmark-form">
                     <div class="form-group">
-                        <label for="bookmark-title">Tytuł</label>
+                        <label for="bookmark-title">Title</label>
                         <input type="text" id="bookmark-title" required>
                     </div>
                     <div class="form-group">
@@ -550,16 +556,16 @@
                         <input type="url" id="bookmark-url" required>
                     </div>
                     <div class="form-group">
-                        <label for="bookmark-folder">Kategoria (istniejąca lub nowa)</label>
+                        <label for="bookmark-folder">Category (existing or new)</label>
                         <input type="text" id="bookmark-folder" list="category-suggestions" required>
                         <datalist id="category-suggestions"></datalist>
                     </div>
                      <div class="form-group">
-                        <label for="bookmark-description">Opis (opcjonalnie)</label>
+                        <label for="bookmark-description">Description (optional)</label>
                         <textarea id="bookmark-description"></textarea>
                     </div>
                     <div class="modal-footer">
-                        <button type="submit" class="form-submit-btn">Zapisz</button>
+                        <button type="submit" class="form-submit-btn">Save</button>
                     </div>
                 </form>
             </div>
@@ -569,200 +575,85 @@
     <!-- Custom Context Menu for deletion -->
     <div id="custom-context-menu" class="custom-context-menu">
         <ul>
-            <li id="delete-context-btn"><span class="delete-icon">🗑️</span> Usuń</li>
+            <li id="delete-context-btn"><span class="delete-icon">🗑️</span> Delete</li>
         </ul>
+    </div>
+    
+    <!-- Profile Modal -->
+    <div id="profile-modal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Profile Management</h3>
+                <button id="profile-modal-close-button" class="modal-close-button">×</button>
+            </div>
+            <div class="modal-body">
+                <div id="profile-info">
+                    <p>Current Profile: <strong id="current-profile-name">Default</strong></p>
+                    <button id="logout-button" class="form-submit-btn" style="background-color: #e74c3c;">Logout</button>
+                </div>
+                <hr style="margin: 20px 0;">
+                <form id="profile-form">
+                    <div class="form-group">
+                        <label for="profile-name">Profile Name</label>
+                        <input type="text" id="profile-name" required placeholder="Enter profile name">
+                    </div>
+                    <div class="modal-footer">
+                        <button type="submit" class="form-submit-btn">Switch/Create Profile</button>
+                    </div>
+                </form>
+            </div>
+        </div>
     </div>
 
 
     <script>
+        // Example bookmarks - these can be customized or left empty
         const initialBookmarks = [
-             { folder: "Edukacja", title: "Ocena Efektywności Pomocy Psychologiczno-Pedagogicznej", url: "https://pedagogika-specjalna.edu.pl/warsztat-pracy/ocena-efektywnosci-udzielanej-pomocy-psychologiczno-pedagogicznej/", description: "Artykuł dotyczący oceny efektywności pomocy psychologiczno-pedagogicznej." },
-            { folder: "Edukacja", title: "Podstawa Programowa Kształcenia Ogólnego (Szkoły Podstawowe)", url: "https://www.gov.pl/web/edukacja/podstawa-programowa-ksztalcenia-ogolnego-dla-szkol-podstawowych", description: "Oficjalna strona z podstawą programową kształcenia ogólnego dla szkół podstawowych." },
-            { folder: "Rozrywka", title: "YouTube - Platforma Wideo", url: "https://www.youtube.com/", description: "Platforma wideo YouTube." },
-            { folder: "Hobby", title: "Blog Tinas Blumenwiese (Rękodzieło)", url: "https://tinasblumenwiese.com/", description: "Blog o rękodziele i kreatywności." },
-            { folder: "Poczta", title: "Onet Poczta - Skrzynka Odbiorcza", url: "https://poczta.onet.pl/", description: "Poczta elektroniczna Onet." },
-            { folder: "Zakupy", title: "Allegro - Platforma Zakupowa", url: "https://allegro.pl/", description: "Popularna platforma zakupowa." },
-            { folder: "Poczta", title: "WP Poczta - Logowanie", url: "https://poczta.wp.pl/", description: "Poczta elektroniczna WP." },
-            { folder: "Zdrowie", title: "Contour Diabetes - Zarządzanie Cukrzycą", url: "https://www.contourplusone.pl/", description: "Strona produktu do zarządzania cukrzycą." },
-            { folder: "Hobby", title: "Pinterest - Odkrywaj Pomysły", url: "https://pl.pinterest.com/", description: "Platforma do odkrywania i zapisywania pomysłów." },
-            { folder: "Finanse", title: "Bank Santander - Logowanie Online", url: "https://www.centrum24.pl/", description: "Logowanie do bankowości internetowej Santander." },
-            { folder: "Zakupy", title: "PAYBACK Bonprix - Sklep Online", url: "https://www.payback.pl/sklepy-online/bonprix", description: "Strona Payback dla zakupów w Bonprix." },
-            { folder: "Zakupy", title: "PAYBACK Sklepy Online - Lista", url: "https://www.payback.pl/sklepy-online", description: "Lista sklepów online współpracujących z Payback." },
-            { folder: "Administracja", title: "ZUS - Raporty Informacyjne", url: "https://www.zus.pl/portal/obszar-ubezpieczonego.npi#KUB0025", description: "Raporty informacyjne z ZUS." },
-            { folder: "Rozrywka", title: "Audioteka - Moja Półka z Audiobookami", url: "https://audioteka.com/pl/my-shelf", description: "Moja półka z audiobookami na Audioteka.com." },
-            { folder: "Rozrywka", title: "Audioteka - Subskrypcja", url: "https://promo.audioteka.com/pl/subscribe/code#login", description: "Strona subskrypcji Audioteka." },
-            { folder: "Administracja", title: "ZUS - Logowanie i Rejestracja", url: "https://www.zus.pl/portal/logowanie.npi", description: "Strona logowania i rejestracji do portalu ZUS." },
-            { folder: "Administracja", title: "Twój e-PIT (Podatki.gov.pl)", url: "https://www.podatki.gov.pl/pit/twoj-e-pit/", description: "Serwis Twój e-PIT na gov.pl." },
-            { folder: "Zdrowie", title: "NFZ - Przegląd Skierowań", url: "https://skierowania.nfz.gov.pl/ap-przegl-skier/servlet/skierowania/show_app", description: "Przeglądarka skierowań na leczenie uzdrowiskowe NFZ." },
-            { folder: "Poczta", title: "Gmail - Skrzynka Odbiorcza", url: "https://mail.google.com/", description: "Skrzynka odbiorcza Gmail." },
-            { folder: "Filmy i TV", title: "FilmPolski.pl - Filmoteka", url: "http://filmpolski.pl/", description: "Filmoteka polska." },
-            { folder: "Filmy i TV", title: "Filmy Online CDA - Darmowe HD", url: "https://cda-filmy.online/", description: "Filmy online w HD za darmo." },
-            { folder: "Filmy i TV", title: "Horizon TV - Oglądaj TV Online", url: "https://www.horizon.tv/pl_pl/tv/ogladaj-tv.html", description: "Oglądaj TV online na Horizon." },
-            { folder: "Filmy i TV", title: "VOD.pl - Filmy i Seriale Online", url: "https://vod.pl/", description: "Filmy i seriale online VOD." },
-            { folder: "Filmy i TV", title: "CDA - Społeczność Filmowa", url: "https://www.cda.pl/", description: "Społeczność cda.pl." },
-            { folder: "Filmy i TV", title: "PLAY NOW - Serwis Streamingowy", url: "https://playnow.pl/", description: "Serwis streamingowy PLAY NOW." },
-            { folder: "Filmy i TV", title: "Film w Szkole - Filmy Edukacyjne", url: "https://filmwszkole.pl/filmy/", description: "Filmy edukacyjne dla szkół." },
-            { folder: "Filmy i TV", title: "Rakuten TV - Najpopularniejsze Publikacje", url: "https://rakuten.tv/pl/", description: "Najpopularniejsze publikacje na Rakuten TV." },
-            { folder: "Filmy i TV", title: "TVP Repetytorium Maturzysty (Gov.pl)", url: "https://www.gov.pl/web/edukacja/tvp-repetytorium-maturzysty", description: "Repetytorium maturalne TVP na gov.pl." },
-            { folder: "Dzienniki Szkolne", title: "ZSE Wołomin - Strona Szkoły", url: "https://zsewolomin.edupage.org/", description: "Strona Zespołu Szkół Ekonomicznych w Wołominie." },
-            { folder: "Dzienniki Szkolne", title: "Dziennik UONET+ (Powiat Wołomiński)", url: "https://uonetplus.vulcan.net.pl/powiatwolominski/", description: "Dziennik elektroniczny UONET+." },
-            { folder: "Dzienniki Szkolne", title: "Brakujący wpis (Placeholder)", url: "https://example.com/placeholder", description: "Ten wpis był wcześniej niekompletny i został uzupełniony." },
-            { folder: "Dzienniki Szkolne", title: "LIBRUS Szkoła - Portal Edukacyjny", url: "https://portal.librus.pl/szkola", description: "Portal LIBRUS Szkoła." },
-            { folder: "Dzienniki Szkolne", title: "Ekonomik Wołomin - Facebook", url: "https://www.facebook.com/EkonomikWolomin/", description: "Strona Facebook ZSE w Wołominie." },
-            { folder: "Narzędzia Online", title: "Microsoft Office Online - Strona Główna", url: "https://www.office.com/apps", description: "Strona główna Microsoft Office." },
-            { folder: "Edukacja", title: "Nowa Era - Zaświadczenia ze Spotkań", url: "https://www.nowaera.pl/spotkania/zaswiadczenia", description: "Zaświadczenia o udziale w spotkaniach Nowa Era." },
-            { folder: "Administracja", title: "COVID-19 - Aktualne Zasady i Ograniczenia", url: "https://www.gov.pl/web/koronawirus/aktualne-zasady-i-ograniczenia", description: "Aktualne zasady i ograniczenia związane z koronawirusem." },
-            { folder: "Edukacja", title: "CEO.org.pl - Szkolenia i Projekty Edukacyjne", url: "https://ceo.org.pl/", description: "Szkolenia dla nauczycieli i projekty edukacyjne." },
-            { folder: "Edukacja", title: "LearningApps.org - Interaktywne Moduły", url: "https://learningapps.org/", description: "Interaktywne moduły edukacyjne." },
-            { folder: "Edukacja", title: "Epodręczniki.pl - Platforma z Podręcznikami", url: "https://epodreczniki.pl/", description: "Platforma z epodręcznikami." },
-            { folder: "Dzienniki Szkolne", title: "SP4 Wołomin - Strona Szkoły Podstawowej", url: "http://zs4-wolomin.pl/", description: "Strona Szkoły Podstawowej nr 4 w Wołominie." },
-            { folder: "Narzędzia Online", title: "Tłumacz Google - Wyszukiwarka", url: "https://translate.google.com/", description: "Wyszukiwarka Google dla tłumacza." },
-            { folder: "Język Hiszpański", title: "Hiszpański - Lekcja 1 (Ang.pl)", url: "https://hiszpanski.ang.pl/nauka/lekcje_od_podstaw/czesc", description: "Pierwsza lekcja hiszpańskiego online." },
-            { folder: "Język Hiszpański", title: "Hiszpański - Ćwiczenia (Ang.pl)", url: "https://hiszpanski.ang.pl/cwiczenia", description: "Ćwiczenia z hiszpańskiego online." },
-            { folder: "Język Hiszpański", title: "Hiszpański - Czasowniki IR (Ang.pl)", url: "https://hiszpanski.ang.pl/gramatyka/czasownik/iii_grupa_koniugacji_ir", description: "Odmiana czasowników hiszpańskich - III grupa koniugacji." },
-            { folder: "Język Hiszpański", title: "Hiszpański - Czasowniki Regularne (Ang.pl)", url: "https://hiszpanski.ang.pl/gramatyka/czasownik/wstep", description: "Wprowadzenie do hiszpańskich czasowników regularnych." },
-            { folder: "Język Hiszpański", title: "Hiszpański - Gramatyka (Ang.pl)", url: "https://hiszpanski.ang.pl/gramatyka/spis-tresci", description: "Spis zagadnień gramatyki hiszpańskiej." },
-            { folder: "Język Hiszpański", title: "Słówka Hiszpański: Szkoła (e-hiszpanski.com)", url: "http://e-hiszpanski.com/slownictwo/szkola.html", description: "Słówka z języka hiszpańskiego dotyczące szkoły." },
-            { folder: "Język Hiszpański", title: "¡Español, por favor! (e-book do nauki)", url: "https://www.espanoleandocondoni.com/sklep/item/e-book/espanol-por-favor---version-electronica-e-book/", description: "E-book do nauki hiszpańskiego." },
-            { folder: "Język Hiszpański", title: "Hiszpańska Salsa - Zdrowie (Blog)", url: "http://hiszpanskasalsa.blogspot.com/2016/08/la-salud-zdrowie-czii.html", description: "Blog o zdrowiu po hiszpańsku." },
-            { folder: "Język Hiszpański", title: "Hiszpański - Przysłówki (Crib.pl)", url: "https://hiszpanski.crib.pl/adverbio-przyslowki-w-jezyku-hiszpanskim.html", description: "Przysłówki w języku hiszpańskim." },
-            { folder: "Język Hiszpański", title: "Hiszpański - Liczebniki (Langusta.io)", url: "https://langusta.io/blog/liczebniki-hiszpanskie-maraton-jezykowy-dla-kazdego/", description: "Maraton językowy z liczebnikami hiszpańskimi." },
-            { folder: "Język Hiszpański", title: "YouTube - Hiszpańska Wymowa G", url: "https://www.youtube.com/watch?v=example1", description: "Jak poprawnie wymawiać: guacamole, guitarra, gmail? | hiszpańska wymowa G." },
-            { folder: "Język Hiszpański", title: "YouTube - Agata Uczy (Kanał Edukacyjny)", url: "https://www.youtube.com/watch?v=example2", description: "Kanał edukacyjny Agata uczy." },
-            { folder: "Język Hiszpański", title: "YouTube - Planowanie Nauki Hiszpańskiego", url: "https://www.youtube.com/watch?v=example3", description: "Jak zaplanować naukę hiszpańskiego? | rozmowa z Klaudią z Optimismo Compartido." },
-            { folder: "Język Hiszpański", title: "YouTube - Filmy o Hiszpańskiej Wymowie", url: "https://www.youtube.com/watch?v=example4", description: "Filmy o hiszpańskiej wymowa." },
-            { folder: "Język Hiszpański", title: "YouTube - Kurs Hiszpańskiego dla Początkujących", url: "https://www.youtube.com/watch?v=example5", description: "Kurs hiszpańskiego dla początkujących." },
-            { folder: "Język Hiszpański", title: "Hiszpański - Która Godzina (Speaklanguages.com)", url: "https://pl.speaklanguages.com/hiszpa%C5%84ski/zwroty/kt%C3%B3ra-godzina", description: "Określanie czasu po hiszpańsku." },
-            { folder: "Język Hiszpański", title: "Hiszpański - Podawanie Godziny (Curso.pl)", url: "http://www.curso.pl/index.php?p=2_137", description: "Podawanie godziny w języku hiszpańskim." },
-            { folder: "Język Hiszpański", title: "Hiszpański - Godziny Słówka (Crib.pl)", url: "https://hiszpanski.crib.pl/godziny-nauka-slowek-zwrotow.html", description: "Nauka słówek i zwrotów dotyczących godzin." },
-            { folder: "Język Hiszpański", title: "Agata Uczy - Skarby (Materiały do nauki)", url: "https://www.agatauczy.pl/skarby/", description: "Materiały do nauki hiszpańskiego od Agaty uczy." },
-            { folder: "Język Hiszpański", title: "Small Things with Great Heart (Dla Nauczycieli Języków)", url: "https://smallthingswithgreatheart.com/", description: "Materiały dla nauczycieli języków obcych." },
-            { folder: "Geografia", title: "Geography Notes (PDF)", url: "https://kingproehl.files.wordpress.com/2014/08/geography_notes2.pdf", description: "Plik PDF z notatkami z geografii." },
-            { folder: "Geografia", title: "60 Wirtualnych Budowli do Zwiedzania", url: "https://www.budowle.pl/tekst/60-budowli-ktore-mozesz-odwiedzic-wirtualnie-bez-wychodzenia-z-domu/546", description: "Lista 60 budowli do wirtualnego zwiedzania." },
-            { folder: "Geografia", title: "Wirtualny Kraj - Spacery Panoramiczne", url: "https://www.wirtualnykraj.pl/", description: "Wirtualne spacery i wycieczki panoramiczne." },
-            { folder: "Język Polski", title: "Tragizm Antygony (Wypracowanie)", url: "https://www.bryk.pl/wypracowania/jezyk-polski/antyk-i-biblia/14037-na-czym-polega-tragizm-antygony.html", description: "Wypracowanie na temat tragizmu Antygony." },
-            { folder: "Język Polski", title: "Makbet - Bohaterowie (KLP.pl)", url: "https://klp.pl/makbet/a-7598-3.html", description: "Charakterystyka bohaterów Makbeta z KLP.pl." },
-            { folder: "Język Polski", title: "Makbet - Analiza Lektury (Wypracowania.pl)", url: "https://wypracowania.pl/lektury/makbet-geneza-czas-i-miejsce-akcji-bohaterowie-interpretacja-i-motywy", description: "Analiza lektury Makbet." },
-            { folder: "Język Polski", title: "Skład Zupy Czarownic w Makbecie (Analiza)", url: "https://fizjologus.wordpress.com/2012/05/31/sklad-zupy-czarownic-w-makbecie/", description: "Analiza składu zupy czarownic w Makbecie." },
-            { folder: "Język Polski", title: "Makbet - Streszczenie i Analiza (KLP.pl)", url: "https://klp.pl/makbet/a-7598.html", description: "Streszczenie i analiza Makbeta z KLP.pl." },
-            { folder: "Język Polski", title: "Antygona - Pytania i Odpowiedzi (AleKlasa)", url: "https://aleklasa.pl/gimnazjum/c267-lektury-do-egzaminu/antygona-sofoklesa", description: "Pytania i odpowiedzi dotyczące Antygony." },
-            { folder: "Geografia", title: "Czynniki Klimatotwórcze (Geografia24.pl)", url: "http://geografia24.pl/czynniki-klimatotworcze/", description: "Artykuł o czynnikach klimatotwórczych." },
-            { folder: "Geografia", title: "Prognozowanie Pogody (Geografia24.pl)", url: "http://geografia24.pl/prognozowanie-pogody/", description: "Artykuł o prognozowaniu pogody." },
-            { folder: "Filozofia", title: "Filozofie Starożytne (Sciaga.pl)", url: "https://sciaga.pl/tekst/57655-58-filozofie_starozytne", description: "Tekst o filozofiach starożytnych." },
-            { folder: "Język Polski", title: "Co to są Neologizmy? (AleKlasa)", url: "https://aleklasa.pl/gimnazjum/c185-slowotworstwo/co-to-sa-neologizmy", description: "Definicja i przykłady neologizmów." },
-            { folder: "Język Polski", title: "Neologizmy - Definicja i Przykłady (Bryk.pl)", url: "https://www.bryk.pl/wypracowania/jezyk-polski/materialy-do-matury/1010410-neologizmy-definicja-i-przykłady.html", description: "Definicja i przykłady neologizmów z Bryk.pl." },
-            { folder: "Język Polski", title: "Neologizm - Prosty Polski (Definicja i Przykłady)", url: "https://prostypolski.pl/neologizm-definicja-przyklady-neologizmow/", description: "Definicja i przykłady neologizmów z Prosty Polski." },
-            { folder: "Podróże", title: "Tatrzańska Świątynia Lodowa na Hrebienku", url: "https://gorydlaciebie.pl/tatrzanska-swiatynia-lodowa-na-hrebienku/", description: "Atrakcja słowackich Tatr." },
-            { folder: "Język Polski", title: "Laura i Filon (Audiobook na YouTube)", url: "https://www.youtube.com/watch?v=example6", description: "Audiobook 'Laura i Filon' Franciszka Karpińskiego." },
-            { folder: "Rozwój Osobisty", title: "Umiejętności Społeczne - Program Zajęć Rewalidacyjnych", url: "https://autyzm.life/2020/01/17/umiejetnosci-spoleczne-program-zajec-rewalidacyjnych/", description: "Program zajęć rewalidacyjnych dotyczących umiejętności społecznych." },
-            { folder: "Historia", title: "Niccolo Paganini (PDF)", url: "https://www.sm1st.wroclaw.pl/wp-content/uploads/2020/05/1.Niccolo-Paganini-180-rocznica-s%CC%81mierci.pdf", description: "Plik PDF o Niccolo Paganinim." },
-            { folder: "Rozrywka", title: "Kultowe Pary Filmowe (Ofeminin.pl)", url: "https://www.ofeminin.pl/milosc/zwiazek/12-kultowych-par-z-najwiekszych-kinowych-romansow/hyyxvms", description: "12 kultowych par z największych kinowych romansów." }
+            { folder: "Search Engines", title: "Google", url: "https://www.google.com/", description: "Google Search Engine" },
+            { folder: "Search Engines", title: "Bing", url: "https://www.bing.com/", description: "Bing Search Engine" },
+            { folder: "Social Media", title: "YouTube", url: "https://www.youtube.com/", description: "Video sharing platform" },
+            { folder: "Email", title: "Gmail", url: "https://mail.google.com/", description: "Google Email Service" },
+            { folder: "Tools", title: "Google Translate", url: "https://translate.google.com/", description: "Translation Service" },
+            { folder: "Tools", title: "Microsoft Office", url: "https://www.office.com/apps", description: "Microsoft Office Online" }
         ];
-        const quickAccessLinks = [ { title: "ONET POCZTA", url: "https://poczta.onet.pl/" }, { title: "GMAIL", svg: `<svg viewBox="0 0 32 32"><path d="M32 6v20c0 1.135-0.865 2-2 2h-2V12.438L16 22L4 12.438V28H2c-1.135 0-2-0.865-2-2V6c0-0.781 0.875-1.219 1.5-0.75L16 16l14.5-10.75C31.125 4.781 32 5.219 32 6z" fill="#ea4335"/><path d="M4 12.438l12 9.562l12-9.563V6c0-0.781-0.875-1.219-1.5-0.75L16 16L1.5 5.25C0.875 4.781 0 5.219 0 6v6.438z" fill="#4285f4"/></svg>`, url: "https://mail.google.com/" }, { title: "WP POCZTA", url: "https://poczta.wp.pl/" }, { title: "MS TEAMS", url: "https://teams.microsoft.com/" }, { title: "YOUTUBE", url: "https://www.youtube.com/" }, { title: "ALLEGRO", url: "https://allegro.pl/" }, { title: "LETYSHOPS", url: "https://letyshops.com/pl/" }, { title: "ALIEXPRESS", url: "https://www.aliexpress.com/" }, { title: "INSTAGRAM", url: "https://www.instagram.com/" }, { title: "MESSENGER", url: "https://www.messenger.com/" }, { title: "WHATSAPP", svg: `<svg viewBox="0 0 24 24"><path d="M16.75 13.96c.25.42.45.83.24 1.32-.2.49-.83.74-1.32.83-.49.1-.83.3-1.32.2s-.83-.2-1.32-.45c-.49-.24-1.31-0.65-2.09-1.28s-1.4-1.31-1.6-1.55c-.2-.25-1.13-1.44-1.13-2.73s.69-1.99 1.13-2.29c.44-.3 1.02-.25 1.28-.25.25 0 .49.05.69.54s.44 1.32.49 1.41c.05.1.05.2-.05.34-.1.15-.2.25-.34.4s-.3.3-.44.44c-.15.15-.2.25-.1.4.1.15.44.74.93 1.23s.88.93 1.23 1.02c.15.1.25 0 .4-.15s.3-.2.44-.34c.15-.15.3-.25.44-.2.15 0 .64.2 1.41.49s1.07.49 1.28.69c.2.19.3.44.24.93zm-4.71-11.69c-6.62 0-12 5.38-12 12s5.38 12 12 12 12-5.38 12-12-5.38-12-12-12zm0 2c5.52 0 10 4.48 10 10s-4.48 10-10 10-10-4.48-10-10 4.48-10 10-10z" fill="#25d366"/></svg>`, url: "https://web.whatsapp.com/" }, { title: "Dodaj", url: "#", icon: "➕" }, ];
+        const quickAccessLinks = [ 
+            { title: "GMAIL", svg: `<svg viewBox="0 0 32 32"><path d="M32 6v20c0 1.135-0.865 2-2 2h-2V12.438L16 22L4 12.438V28H2c-1.135 0-2-0.865-2-2V6c0-0.781 0.875-1.219 1.5-0.75L16 16l14.5-10.75C31.125 4.781 32 5.219 32 6z" fill="#ea4335"/><path d="M4 12.438l12 9.562l12-9.563V6c0-0.781-0.875-1.219-1.5-0.75L16 16L1.5 5.25C0.875 4.781 0 5.219 0 6v6.438z" fill="#4285f4"/></svg>`, url: "https://mail.google.com/" }, 
+            { title: "YOUTUBE", url: "https://www.youtube.com/" }, 
+            { title: "GITHUB", url: "https://github.com/" }, 
+            { title: "INSTAGRAM", url: "https://www.instagram.com/" }, 
+            { title: "WHATSAPP", svg: `<svg viewBox="0 0 24 24"><path d="M16.75 13.96c.25.42.45.83.24 1.32-.2.49-.83.74-1.32.83-.49.1-.83.3-1.32.2s-.83-.2-1.32-.45c-.49-.24-1.31-0.65-2.09-1.28s-1.4-1.31-1.6-1.55c-.2-.25-1.13-1.44-1.13-2.73s.69-1.99 1.13-2.29c.44-.3 1.02-.25 1.28-.25.25 0 .49.05.69.54s.44 1.32.49 1.41c.05.1.05.2-.05.34-.1.15-.2.25-.34.4s-.3.3-.44.44c-.15.15-.2.25-.1.4.1.15.44.74.93 1.23s.88.93 1.23 1.02c.15.1.25 0 .4-.15s.3-.2.44-.34c.15-.15.3-.25.44-.2.15 0 .64.2 1.41.49s1.07.49 1.28.69c.2.19.3.44.24.93zm-4.71-11.69c-6.62 0-12 5.38-12 12s5.38 12 12 12 12-5.38 12-12-5.38-12-12-12zm0 2c5.52 0 10 4.48 10 10s-4.48 10-10 10-10-4.48-10-10 4.48-10 10-10z" fill="#25d366"/></svg>`, url: "https://web.whatsapp.com/" }, 
+            { title: "Add New", url: "#", icon: "➕" } 
+        ];
         const allGreetingsForHeader = [
-            { emoji: "🌿", text: "Cześć Viola! Jak się mają Twoje pelargonie?", languageCode: "pl", polishTranslation: "Cześć Viola! Jak się mają Twoje pelargonie?" },
-            { emoji: "☀️", text: "Witaj w słoneczny dzień! Gotowa na ogród?", languageCode: "pl", polishTranslation: "Witaj w słoneczny dzień! Gotowa na ogród?" },
-            { emoji: "🧵", text: "Hej Viola! Dziergasz dziś coś pięknego?", languageCode: "pl", polishTranslation: "Hej Viola! Dziergasz dziś coś pięknego?" },
-            { emoji: "🪴", text: "Dzień dobry, kochana! Kawa na działce smakuje najlepiej.", languageCode: "pl", polishTranslation: "Dzień dobry, kochana! Kawa na działce smakuje najlepiej." },
-            { emoji: "🍅", text: "Viola, jak tam warzywnik?", languageCode: "pl", polishTranslation: "Viola, jak tam warzywnik?" },
-            { emoji: "🌻", text: "Halo! Słońce świeci, czas na relaks.", languageCode: "pl", polishTranslation: "Halo! Słońce świeci, czas na relaks." },
-            { emoji: "🌼", text: "Siemanko, Viola! Co nowego w ogrodzie?", languageCode: "pl", polishTranslation: "Siemanko, Viola! Co nowego w ogrodzie?" },
-            { emoji: "☀️", text: "Uśmiechnięte dzień dobry!", languageCode: "pl", polishTranslation: "Uśmiechnięte dzień dobry!" },
-            { emoji: "🛋️", text: "Hejka! Może dziś trochę lenistwa?", languageCode: "pl", polishTranslation: "Hejka! Może dziś trochę lenistwa?" },
-            { emoji: "🌸", text: "Viola, witaj wśród kwiatów!", languageCode: "pl", polishTranslation: "Viola, witaj wśród kwiatów!" },
-            { emoji: "🧶", text: "Cześć! Masz dziś czas na szydełko?", languageCode: "pl", polishTranslation: "Cześć! Masz dziś czas na szydełko?" },
-            { emoji: "☀️", text: "Słoneczne pozdrowienia z działki!", languageCode: "pl", polishTranslation: "Słoneczne pozdrowienia z działki!" },
-            { emoji: "✂️", text: "Dzień dobry, artystko! Co dziś tworzysz?", languageCode: "pl", polishTranslation: "Dzień dobry, artystko! Co dziś tworzysz?" },
-            { emoji: "🧤", text: "Cześć Viola! Rękawiczki ogrodowe w dłoń!", languageCode: "pl", polishTranslation: "Cześć Viola! Rękawiczki ogrodowe w dłoń!" },
-            { emoji: "🌺", text: "Jak tam Twoje bratki?", languageCode: "pl", polishTranslation: "Jak tam Twoje bratki?" },
-            { emoji: "🛏️", text: "Miłego poranka, Viola!", languageCode: "pl", polishTranslation: "Miłego poranka, Viola!" },
-            { emoji: "🌤️", text: "Hej! Dziś idealny dzień na odpoczynek", languageCode: "pl", polishTranslation: "Hej! Dziś idealny dzień na odpoczynek" },
-            { emoji: "🌾", text: "Viola, gotowa na dzień w ogrodzie?", languageCode: "pl", polishTranslation: "Viola, gotowa na dzień w ogrodzie?" },
-            { emoji: "👑🪴", text: "Witaj, królowo działki!", languageCode: "pl", polishTranslation: "Witaj, królowo działki!" },
-            { emoji: "☕", text: "Cześć! Zasłużona przerwa?", languageCode: "pl", polishTranslation: "Cześć! Zasłużona przerwa?" },
-            { emoji: "🌼", text: "Ciao Viola! Come stanno i tuoi fiori oggi?", languageCode: "it", polishTranslation: "Cześć Viola! Jak się mają Twoje kwiaty dzisiaj?" },
-            { emoji: "☕", text: "Buongiorno! Hai già bevuto il caffè sul terrazzo?", languageCode: "it", polishTranslation: "Dzień dobry! Piłaś już kawę na tarasie?" },
-            { emoji: "🌞", text: "Viola, che bella giornata per il giardinaggio!", languageCode: "it", polishTranslation: "Viola, co za piękny dzień na ogrodnictwo!" },
-            { emoji: "🧶", text: "Salve! Stai creando qualcosa di nuovo?", languageCode: "it", polishTranslation: "Witaj! Tworzysz coś nowego?" },
-            { emoji: "🌿", text: "Ehi Viola! Il basilico cresce bene?", languageCode: "it", polishTranslation: "Hej Viola! Bazylia dobrze rośnie?" },
-            { emoji: "🪴", text: "Bentornata nel tuo angolo verde!", languageCode: "it", polishTranslation: "Witaj z powrotem w swoim zielonym zakątku!" },
-            { emoji: "🛋️", text: "Ciao! Ti meriti un po’ di relax oggi", languageCode: "it", polishTranslation: "Cześć! Zasługujesz dziś na trochę relaksu" },
-            { emoji: "🍅", text: "Viola, come va il tuo orto?", languageCode: "it", polishTranslation: "Viola, jak tam Twój ogródek warzywny?" },
-            { emoji: "☀️", text: "Ciao bella! Oggi il sole è tutto tuo!", languageCode: "it", polishTranslation: "Cześć piękna! Dziś słońce jest tylko dla Ciebie!" },
-            { emoji: "✂️", text: "Viola! Hai trovato tempo per il tuo hobby oggi?", languageCode: "it", polishTranslation: "Viola! Znalazłaś dziś czas na swoje hobby?" },
-            { emoji: "🌻", text: "Buon pomeriggio! Fiori, tè i silenzio – giornata perfetta.", languageCode: "it", polishTranslation: "Dzień dobry! Kwiaty, herbata i cisza – idealny dzień." },
-            { emoji: "🧵", text: "Hey! Dov’è il tuo uncinetto oggi?", languageCode: "it", polishTranslation: "Hej! Gdzie dziś Twój szydełko?" },
-            { emoji: "👑", text: "Ciao Viola, regina del giardino!", languageCode: "it", polishTranslation: "Cześć Viola, królowo ogrodu!" },
-            { emoji: "🌸", text: "Pronta per una passeggiata tra i tuoi fiori?", languageCode: "it", polishTranslation: "Gotowa na spacer wśród Twoich kwiatów?" },
-            { emoji: "🌤️", text: "Che ne dici di una pausa sotto el sole?", languageCode: "it", polishTranslation: "Co powiesz na przerwę w słońcu?" },
-            { emoji: "🌱", text: "Ciao carissima! Oggi tutto cresce!", languageCode: "it", polishTranslation: "Cześć najdroższa! Dziś wszystko rośnie!" },
-            { emoji: "🌿🤗", text: "Un abbraccio verde per te!", languageCode: "it", polishTranslation: "Zielony uścisk dla Ciebie!" },
-            { emoji: "🎨", text: "Viola, tempo per il tuo angolo creativo?", languageCode: "it", polishTranslation: "Viola, czas na Twój kreatywny kącik?" },
-            { emoji: "🌺", text: "Buondì! Hai già annaffiato i gerani?", languageCode: "it", polishTranslation: "Dzień dobry! Podlałaś już pelargonie?" },
-            { emoji: "🛋️", text: "Ciao! Una giornata serena ti aspetta", languageCode: "it", polishTranslation: "Cześć! Czeka Cię spokojny dzień" },
-            { emoji: "🌞", text: "¡Hola Viola! ¿Cómo va tu jardín hoy?", languageCode: "es", polishTranslation: "Cześć Viola! Jak tam Twój ogród dzisiaj?" },
-            { emoji: "👑🪴", text: "¡Buenos días, reina de la huerta!", languageCode: "es", polishTranslation: "Dzień dobry, królowo warzywnika!" },
-            { emoji: "🧶", text: "¡Viola! ¿Ya tejiste algo nuevo?", languageCode: "es", polishTranslation: "Viola! Szydełkowałaś już coś nowego?" },
-            { emoji: "🛋️", text: "¡Qué día tan lindo para relajarte!", languageCode: "es", polishTranslation: "Co za piękny dzień na relaks!" },
-            { emoji: "🍅", text: "¡Hey! ¿Crecen bien tus tomates?", languageCode: "es", polishTranslation: "Hej! Twoje pomidory dobrze rosną?" },
-            { emoji: "✂️🌿", text: "¡Hola, artista de la tierra!", languageCode: "es", polishTranslation: "Cześć, artystko ziemi!" },
-            { emoji: "🌼", text: "¡Viola, bienvenida al paraíso verde!", languageCode: "es", polishTranslation: "Viola, witaj w zielonym raju!" },
-            { emoji: "☕☀️", text: "¿Tomamos un cafecito bajo el sol?", languageCode: "es", polishTranslation: "Napijemy się kawy w słońcu?" },
-            { emoji: "🌸", text: "¡Buenas! ¿Ya regaste tus flores?", languageCode: "es", polishTranslation: "Dzień dobry! Podlałaś już swoje kwiaty?" },
-            { emoji: "🎨", text: "¡Viola! Hoy es un día para ti y tu creatividad", languageCode: "es", polishTranslation: "Viola! Dziś jest dzień dla Ciebie i Twojej kreatywności" },
-            { emoji: "🧤", text: "¡Hola! ¿Lista para la tierra?", languageCode: "es", polishTranslation: "Cześć! Gotowa na ziemię?" },
-            { emoji: "🤗🌞", text: "¡Un abrazo soleado para ti!", languageCode: "es", polishTranslation: "Słoneczny uścisk dla Ciebie!" },
-            { emoji: "🌺", text: "¿Cómo está tu rincón favorito?", languageCode: "es", polishTranslation: "Jak tam Twój ulubiony zakątek?" },
-            { emoji: "🌻", text: "¡Buenos días! Tu jardín te espera", languageCode: "es", polishTranslation: "Dzień dobry! Twój ogród na Ciebie czeka" },
-            { emoji: "🛋️", text: "¡Viola! Hoy relájate y disfruta del sol", languageCode: "es", polishTranslation: "Viola! Dziś zrelaksuj się i ciesz słońcem" },
-            { emoji: "🧵", text: "¿Y ese bordado? ¡Seguro que hermoso!", languageCode: "es", polishTranslation: "A ten haft? Na pewno piękny!" },
-            { emoji: "🌾", text: "¡Hola hola! Tiempo para cosechar", languageCode: "es", polishTranslation: "Cześć cześć! Czas na zbiory" },
-            { emoji: "🌿", text: "¡Saluditos! Tu jardín huele a primavera.", languageCode: "es", polishTranslation: "Pozdrowienia! Twój ogród pachnie wiosną." },
-            { emoji: "🌱", text: "¡Qué día perfecto para plantar algo nuevo!", languageCode: "es", polishTranslation: "Co za idealny dzień na posadzenie czegoś nowego!" },
-            { emoji: "😊💐", text: "¡Viola, una sonrisa con olor a lavanda!", languageCode: "es", polishTranslation: "Viola, uśmiech pachnący lawandą!" },
-            { emoji: "🌸", text: "Hey Viola! How’s your garden today?", languageCode: "en", polishTranslation: "Hej Viola! Jak tam Twój ogród dzisiaj?" },
-            { emoji: "☀️", text: "Good morning, sunshine!", languageCode: "en", polishTranslation: "Dzień dobry, słoneczko!" },
-            { emoji: "🛋️", text: "Viola, ready for some relaxing time?", languageCode: "en", polishTranslation: "Viola, gotowa na trochę relaksu?" },
-            { emoji: "🧶", text: "Hello there! Knitting anything fun?", languageCode: "en", polishTranslation: "Witaj! Robisz na drutach coś fajnego?" },
-            { emoji: "☕", text: "Hi! Tea break in the garden sounds perfect.", languageCode: "en", polishTranslation: "Cześć! Przerwa na herbatę w ogrodzie brzmi idealnie." },
-            { emoji: "🌿", text: "What a great day to be outside!", languageCode: "en", polishTranslation: "Co za wspaniały dzień, żeby być na zewnątrz!" },
-            { emoji: "🪴", text: "Hey! Your plants must love this weather.", languageCode: "en", polishTranslation: "Hej! Twoje rośliny muszą kochać tę pogodę." },
-            { emoji: "🍅", text: "Viola, how’s the veggie patch doing?", languageCode: "en", polishTranslation: "Viola, jak tam warzywnik?" },
-            { emoji: "🌼", text: "Morning vibes and flower smiles!", languageCode: "en", polishTranslation: "Poranne wibracje i uśmiechy kwiatów!" },
-            { emoji: "🌞", text: "Hello Viola! The sun is calling", languageCode: "en", polishTranslation: "Witaj Viola! Słońce woła" },
-            { emoji: "✂️", text: "Time for some stitching magic?", languageCode: "en", polishTranslation: "Czas na trochę magicznego szycia?" },
-            { emoji: "🌱", text: "Hey you! Another green adventure awaits.", languageCode: "en", polishTranslation: "Hej Ty! Kolejna zielona przygoda czeka." },
-            { emoji: "🌻", text: "Waving hello from the flower beds!", languageCode: "en", polishTranslation: "Macham z rabat kwiatowych!" },
-            { emoji: "👑", text: "Rise and shine, Queen of the garden", languageCode: "en", polishTranslation: "Wstawaj i świeć, królowo ogrodu" },
-            { emoji: "🛋️", text: "How about a cozy afternoon on the porch?", languageCode: "en", polishTranslation: "Co powiesz na przytulne popołudnie na werandzie?" },
-            { emoji: "🌾", text: "Hi Viola! Let's get our hands dirty!", languageCode: "en", polishTranslation: "Cześć Viola! Pobrudźmy sobie ręce!" },
-            { emoji: "🌺", text: "Viola, your blooms must look amazing today", languageCode: "en", polishTranslation: "Viola, Twoje kwiaty muszą dziś wyglądać niesamowicie" },
-            { emoji: "🎨🧵", text: "Feeling crafty today?", languageCode: "en", polishTranslation: "Masz dziś ochotę na rękodzieło?" },
-            { emoji: "🌤️", text: "Lovely weather for sowing seeds!", languageCode: "en", polishTranslation: "Urocza pogoda na sianie nasion!" },
-            { emoji: "🌸", text: "Hello friend! Time to relax and create.", languageCode: "en", polishTranslation: "Witaj przyjaciółko! Czas na relaks i tworzenie." },
-            { emoji: "🌷", text: "Привет, Виола! Как поживает твой сад?", languageCode: "ru", polishTranslation: "Cześć, Viola! Jak tam Twój ogród?" },
-            { emoji: "🌞", text: "Доброе утро! Сегодня идеальная погоoda.", languageCode: "ru", polishTranslation: "Dzień dobry! Dziś idealna pogoda." },
-            { emoji: "🛋️", text: "Виола, пора отдохнуть!", languageCode: "ru", polishTranslation: "Viola, czas na odpoczynek!" },
-            { emoji: "🧶", text: "Приветики! Вяжешь что-то новенькое?", languageCode: "ru", polishTranslation: "Cześć! Robisz na drutach coś nowego?" },
-            { emoji: "🪴", text: "Здравствуй, хозяйка дачи!", languageCode: "ru", polishTranslation: "Witaj, gospodyni daczy!" },
-            { emoji: "🌼", text: "Виола, поливала цветы сегодня?", languageCode: "ru", polishTranslation: "Viola, podlewałaś dziś kwiaty?" },
-            { emoji: "☕🌿", text: "С добрым утром и чашкой чая", languageCode: "ru", polishTranslation: "Dzień dobry i filiżanka herbaty" },
-            { emoji: "🌸", text: "Как дела в твоей оранжерее?", languageCode: "ru", polishTranslation: "Jak tam w Twojej oranżerii?" },
-            { emoji: "✂️", text: "Виола, день для творчества!", languageCode: "ru", polishTranslation: "Viola, dzień na twórczość!" },
-            { emoji: "🌤️", text: "Привет! Солнце улыбается тебе", languageCode: "ru", polishTranslation: "Cześć! Słońce się do Ciebie uśmiecha" },
-            { emoji: "🍅", text: "Виола, собираешь урожай?", languageCode: "ru", polishTranslation: "Viola, zbierasz plony?" },
-            { emoji: "👑🌺", text: "Привет, королева сада!", languageCode: "ru", polishTranslation: "Cześć, królowo ogrodu!" },
-            { emoji: "🎨🧵", text: "Сегодня отличный день для вязания", languageCode: "ru", polishTranslation: "Dziś świetny dzień na robótki ręczne" },
-            { emoji: "🌻", text: "Добрый день! Твои цветы пахнут весной", languageCode: "ru", polishTranslation: "Dzień dobry! Twoje kwiaty pachną wiosną" },
-            { emoji: "🛋️", text: "Виола, пора насладиться тишиной", languageCode: "ru", polishTranslation: "Viola, czas na cieszenie się ciszą" },
-            { emoji: "🌼", text: "Как настроение? Всё цветёт?", languageCode: "ru", polishTranslation: "Jak nastrój? Wszystko kwitnie?" },
-            { emoji: "🌱", text: "Привет, твой огород ждёт тебя", languageCode: "ru", polishTranslation: "Cześć, Twój ogród czeka na Ciebie" },
-            { emoji: "☀️", text: "Пусть день будет тёплым и солнечным", languageCode: "ru", polishTranslation: "Niech dzień będzie ciepły i słoneczny" },
-            { emoji: "🤗", text: "Виола, сделай паузу – ты это заслужила", languageCode: "ru", polishTranslation: "Viola, zrób sobie przerwę – zasłużyłaś na to" },
-            { emoji: "🌿👑", text: "Добро пожаловать в своё зелёное королевство!", languageCode: "ru", polishTranslation: "Witaj w swoim zielonym królestwie!" }
+            { emoji: "👋", text: "Welcome! Ready to organize your bookmarks?", languageCode: "en" },
+            { emoji: "☀️", text: "Good morning! What will you explore today?", languageCode: "en" },
+            { emoji: "🌟", text: "Hello! Your bookmarks are waiting for you", languageCode: "en" },
+            { emoji: "🎯", text: "Ready to be productive today?", languageCode: "en" },
+            { emoji: "💫", text: "Welcome back! Let's get organized", languageCode: "en" },
+            { emoji: "🚀", text: "Time to explore the web!", languageCode: "en" },
+            { emoji: "📚", text: "Your personal library awaits", languageCode: "en" },
+            { emoji: "✨", text: "Make today amazing!", languageCode: "en" },
+            { emoji: "🎉", text: "Let's make today productive!", languageCode: "en" },
+            { emoji: "💼", text: "Work smarter, not harder", languageCode: "en" },
+            { emoji: "🌈", text: "Every day is a new opportunity", languageCode: "en" },
+            { emoji: "💡", text: "Ideas start with inspiration", languageCode: "en" },
+            { emoji: "🎨", text: "Create something wonderful today", languageCode: "en" },
+            { emoji: "🔖", text: "Your bookmarks, your way", languageCode: "en" },
+            { emoji: "📝", text: "Time to organize and conquer!", languageCode: "en" }
         ];
         const splashBackgrounds = [ 'linear-gradient(135deg, #a8dadc, #457b9d)', 'linear-gradient(135deg, #f8edeb, #fec89a)', ];
-        const categoryColors = { "Edukacja": "#E0F7FA", "Rozrywka": "#FFF3E0", "Hobby": "#E8F5F5", "Poczta": "#E3F2FD", "Zakupy": "#FCE4EC", "Zdrowie": "#F3E5F5", "Finanse": "#FFFDE7", "Administracja": "#EFEBE9", "Filmy i TV": "#FFEBEE", "Dzienniki Szkolne": "#F0F4C3", "Narzędzia Online": "#F5F5F5", "Język Hiszpański": "#E0F2F7", "Geografia": "#E6EE9C", "Język Polski": "#FFE0B2", "Filozofia": "#D1C4E9", "Podróże": "#C8E6C9", "Rozwój Osobisty": "#B2EBF2", "Historia": "#FBE9E7", };
+        const categoryColors = { 
+            "Search Engines": "#E0F7FA", 
+            "Social Media": "#FFF3E0", 
+            "Email": "#E3F2FD", 
+            "Tools": "#F5F5F5",
+            "News": "#FFEBEE",
+            "Shopping": "#FCE4EC",
+            "Entertainment": "#F3E5F5",
+            "Work": "#FFFDE7",
+            "Development": "#E8F5F5",
+            "Learning": "#E0F2F7"
+        };
         
         const themes = [
              { name: 'LightHighContrast', values: { '--primary-color': '#0053b3', '--primary-color-dark': '#00408c', '--background-gradient-start': '#ffffff', '--background-gradient-end': '#f0f2f5', '--container-bg': '#ffffff', '--text-primary': '#000000', '--text-secondary': '#555555', '--quick-access-bg': '#e9ecef', '--item-bg': '#f8f9fa', '--item-hover-bg': '#e9ecef', '--delete-color': '#d90429' }},
@@ -785,8 +676,9 @@
         // --- All JS functions are here and complete ---
         
         function loadBookmarks() {
-            const storedUserBookmarks = localStorage.getItem('userBookmarks');
-            const storedDeletedInitial = localStorage.getItem('deletedInitialBookmarks');
+            const profileKey = currentProfile || 'Default';
+            const storedUserBookmarks = localStorage.getItem(`userBookmarks_${profileKey}`) || localStorage.getItem('userBookmarks');
+            const storedDeletedInitial = localStorage.getItem(`deletedInitialBookmarks_${profileKey}`) || localStorage.getItem('deletedInitialBookmarks');
             
             const userBookmarks = storedUserBookmarks ? JSON.parse(storedUserBookmarks) : [];
             const deletedInitialUrls = storedDeletedInitial ? JSON.parse(storedDeletedInitial) : [];
@@ -799,8 +691,10 @@
         }
 
         function saveBookmarks() {
+            const profileKey = currentProfile || 'Default';
             const userBookmarks = allBookmarksData.filter(b => !initialBookmarks.some(ib => ib.url === b.url && ib.title === b.title));
-            localStorage.setItem('userBookmarks', JSON.stringify(userBookmarks));
+            localStorage.setItem(`userBookmarks_${profileKey}`, JSON.stringify(userBookmarks));
+            localStorage.setItem('userBookmarks', JSON.stringify(userBookmarks)); // Keep backwards compatibility
         }
         
         function getFaviconUrl(url) {
@@ -941,16 +835,18 @@
         }
 
         function deleteBookmark(bookmarkToDelete) {
-             if (confirm(`Czy na pewno chcesz usunąć zakładkę "${bookmarkToDelete.title}"?`)) {
+             if (confirm(`Are you sure you want to delete "${bookmarkToDelete.title}"?`)) {
                 const isInitial = initialBookmarks.some(
                     b => b.url === bookmarkToDelete.url && b.title === bookmarkToDelete.title
                 );
 
                 if (isInitial) {
-                    const storedDeletedInitial = localStorage.getItem('deletedInitialBookmarks');
+                    const profileKey = currentProfile || 'Default';
+                    const storedDeletedInitial = localStorage.getItem(`deletedInitialBookmarks_${profileKey}`) || localStorage.getItem('deletedInitialBookmarks');
                     const deletedInitialUrls = storedDeletedInitial ? JSON.parse(storedDeletedInitial) : [];
                     if (!deletedInitialUrls.includes(bookmarkToDelete.url)) {
                         deletedInitialUrls.push(bookmarkToDelete.url);
+                        localStorage.setItem(`deletedInitialBookmarks_${profileKey}`, JSON.stringify(deletedInitialUrls));
                         localStorage.setItem('deletedInitialBookmarks', JSON.stringify(deletedInitialUrls));
                     }
                 }
@@ -997,7 +893,7 @@
             const shouldShowNoResults = filteredRawBookmarks.length === 0 && term;
             noResultsMessage.style.display = shouldShowNoResults ? 'block' : 'none';
             if (shouldShowNoResults) {
-                 noResultsMessage.innerHTML = `Brak wyników dla "${searchTerm}".`;
+                 noResultsMessage.innerHTML = `No results found for "${searchTerm}".`;
             }
         }
         
@@ -1029,7 +925,7 @@
             if (filteredRawBookmarks.length > 0) {
                 filterAndRenderBookmarks(searchTerm);
             } else {
-                noResultsMessage.innerHTML = 'Sekunda - szukam w Google...';
+                noResultsMessage.innerHTML = 'Searching on Google...';
                 noResultsMessage.style.display = 'block';
                 loader.style.display = 'inline-block';
                 document.getElementById('bookmark-categories-section').innerHTML = '';
@@ -1167,6 +1063,79 @@
             }, delay + 200);
         }
 
+        // Profile Management Functions
+        let currentProfile = localStorage.getItem('currentProfile') || 'Default';
+        
+        function switchProfile(profileName) {
+            currentProfile = profileName;
+            localStorage.setItem('currentProfile', profileName);
+            loadBookmarks();
+            filterAndRenderBookmarks('');
+            updateProfileDisplay();
+        }
+
+        function updateProfileDisplay() {
+            document.getElementById('current-profile-name').textContent = currentProfile;
+        }
+
+        function exportBookmarks() {
+            const exportData = {
+                profile: currentProfile,
+                userBookmarks: localStorage.getItem(`userBookmarks_${currentProfile}`) || localStorage.getItem('userBookmarks'),
+                deletedInitialBookmarks: localStorage.getItem(`deletedInitialBookmarks_${currentProfile}`) || localStorage.getItem('deletedInitialBookmarks'),
+                timestamp: new Date().toISOString()
+            };
+            
+            const dataStr = JSON.stringify(exportData, null, 2);
+            const dataBlob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `bookmarks_${currentProfile}_${new Date().toISOString().split('T')[0]}.json`;
+            link.click();
+            URL.revokeObjectURL(url);
+            alert('Bookmarks exported successfully!');
+        }
+
+        function importBookmarks(file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const importData = JSON.parse(e.target.result);
+                    if (importData.userBookmarks) {
+                        localStorage.setItem(`userBookmarks_${currentProfile}`, importData.userBookmarks);
+                        localStorage.setItem('userBookmarks', importData.userBookmarks);
+                    }
+                    if (importData.deletedInitialBookmarks) {
+                        localStorage.setItem(`deletedInitialBookmarks_${currentProfile}`, importData.deletedInitialBookmarks);
+                        localStorage.setItem('deletedInitialBookmarks', importData.deletedInitialBookmarks);
+                    }
+                    loadBookmarks();
+                    filterAndRenderBookmarks('');
+                    alert('Bookmarks imported successfully!');
+                } catch (error) {
+                    alert('Error importing bookmarks. Please check the file format.');
+                    console.error('Import error:', error);
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function openProfileModal() {
+            document.getElementById('profile-modal').classList.add('open');
+            updateProfileDisplay();
+        }
+
+        function closeProfileModal() {
+            document.getElementById('profile-modal').classList.remove('open');
+        }
+
+        function logoutProfile() {
+            if (confirm('Are you sure you want to logout? This will switch to the Default profile.')) {
+                switchProfile('Default');
+                closeProfileModal();
+            }
+        }
 
         document.addEventListener('DOMContentLoaded', () => {
             loadBookmarks();
@@ -1210,6 +1179,38 @@
 
             window.addEventListener('click', hideContextMenu);
             
+            // Profile, Export, Import buttons
+            const profileButton = document.getElementById('profile-button');
+            const exportButton = document.getElementById('export-button');
+            const importButton = document.getElementById('import-button');
+            const importFileInput = document.getElementById('import-file-input');
+            const profileModalCloseButton = document.getElementById('profile-modal-close-button');
+            const profileForm = document.getElementById('profile-form');
+            const logoutButton = document.getElementById('logout-button');
+            
+            profileButton.addEventListener('click', openProfileModal);
+            exportButton.addEventListener('click', exportBookmarks);
+            importButton.addEventListener('click', () => importFileInput.click());
+            importFileInput.addEventListener('change', (e) => {
+                if (e.target.files.length > 0) {
+                    importBookmarks(e.target.files[0]);
+                    e.target.value = ''; // Reset input
+                }
+            });
+            profileModalCloseButton.addEventListener('click', closeProfileModal);
+            logoutButton.addEventListener('click', logoutProfile);
+            profileForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const newProfileName = document.getElementById('profile-name').value.trim();
+                if (newProfileName) {
+                    switchProfile(newProfileName);
+                    closeProfileModal();
+                }
+            });
+            
+            // Initialize profile display
+            updateProfileDisplay();
+            
             const splashScreen = document.getElementById('splash-screen');
             const splashMessageDiv = splashScreen.querySelector('.splash-message');
             const mainContentWrapper = document.getElementById('main-content-wrapper');
@@ -1217,7 +1218,8 @@
             
             const splashGreeting = getDynamicGreeting();
             if (splashGreeting) {
-                splashMessageDiv.innerHTML = `<span>${splashGreeting.emoji}</span> <span>${splashGreeting.text}</span><br><span style="font-size:0.8em; color:#ddd;">${splashGreeting.polishTranslation}</span>`;
+                const translation = splashGreeting.polishTranslation || splashGreeting.text;
+                splashMessageDiv.innerHTML = `<span>${splashGreeting.emoji}</span> <span>${splashGreeting.text}</span>`;
             }
             
             setTimeout(() => {
